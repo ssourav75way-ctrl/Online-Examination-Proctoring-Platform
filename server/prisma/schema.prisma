@@ -1,0 +1,643 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                     String                  @id @default(uuid())
+  email                  String                  @unique
+  passwordHash           String
+  firstName              String
+  lastName               String
+  globalRole             GlobalRole
+  isActive               Boolean                 @default(true)
+  highContrastMode       Boolean                 @default(false)
+  screenReaderEnabled    Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  accommodationAudits    AccommodationAudit[]    @relation("AuditPerformer")
+  approvedAccommodations Accommodation[]         @relation("AccommodationApprover")
+  accommodations         Accommodation[]
+  gradedAnswers          CandidateAnswer[]       @relation("AnswerGrader")
+  examEnrollments        ExamEnrollment[]
+  createdExams           Exam[]                  @relation("ExamCreator")
+  institutionMembers     InstitutionMember[]
+  notifications          Notification[]
+  reviewedFlags          ProctorFlag[]           @relation("FlagReviewer")
+  questionVersions       QuestionVersion[]
+  createdQuestions       Question[]
+  reviewedResults        ReEvaluationRequest[]   @relation("ReEvalReviewer")
+  timeAdjustments        SessionTimeAdjustment[] @relation("TimeAdjuster")
+
+  @@map("users")
+}
+
+model Institution {
+  id          String              @id @default(uuid())
+  name        String
+  code        String              @unique
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  departments Department[]
+  exams       Exam[]
+  members     InstitutionMember[]
+
+  @@map("institutions")
+}
+
+model InstitutionMember {
+  id               String                        @id @default(uuid())
+  userId           String
+  institutionId    String
+  role             InstitutionRole
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+  departmentAccess InstitutionMemberDepartment[]
+  institution      Institution                   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  user             User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, institutionId])
+  @@map("institution_members")
+}
+
+model InstitutionMemberDepartment {
+  id                  String            @id @default(uuid())
+  institutionMemberId String
+  departmentId        String
+  department          Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member              InstitutionMember @relation(fields: [institutionMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([institutionMemberId, departmentId])
+  @@map("institution_member_departments")
+}
+
+model Department {
+  id            String                        @id @default(uuid())
+  institutionId String
+  name          String
+  code          String
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+  description   String?
+  institution   Institution                   @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  memberAccess  InstitutionMemberDepartment[]
+  questionPools QuestionPool[]
+
+  @@unique([institutionId, code])
+  @@map("departments")
+}
+
+model QuestionPool {
+  id              String           @id @default(uuid())
+  departmentId    String
+  name            String
+  description     String?
+  isShared        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  isActive        Boolean          @default(true)
+  examPoolConfigs ExamPoolConfig[]
+  department      Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  questions       Question[]
+
+  @@map("question_pools")
+}
+
+model Question {
+  id               String            @id @default(uuid())
+  poolId           String
+  currentVersionId String?           @unique
+  type             QuestionType
+  topic            String
+  createdById      String
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  examQuestions    ExamQuestion[]
+  versions         QuestionVersion[] @relation("QuestionVersions")
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  currentVersion   QuestionVersion?  @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  pool             QuestionPool      @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@index([poolId, isActive, topic])
+  @@map("questions")
+}
+
+model QuestionVersion {
+  id                  String                @id @default(uuid())
+  questionId          String
+  versionNumber       Int
+  content             String
+  difficulty          Int
+  marks               Float
+  negativeMarks       Float                 @default(0)
+  options             Json?
+  correctAnswer       String?
+  keywords            Json?
+  similarityThreshold Float?
+  codeTemplate        String?
+  codeLanguage        String?
+  createdAt           DateTime              @default(now())
+  createdById         String
+  isLatest            Boolean               @default(true)
+  attemptQuestions    AttemptQuestionSet[]
+  codeResults         CodeExecutionResult[]
+  examQuestions       ExamQuestion[]
+  analytics           QuestionAnalytics[]
+  testCases           QuestionTestCase[]
+  createdBy           User                  @relation(fields: [createdById], references: [id])
+  question            Question              @relation("QuestionVersions", fields: [questionId], references: [id], onDelete: Cascade)
+  currentForQuestion  Question?             @relation("CurrentVersion")
+
+  @@unique([questionId, versionNumber])
+  @@map("question_versions")
+}
+
+model QuestionTestCase {
+  id                String                @id @default(uuid())
+  questionVersionId String
+  input             String
+  expectedOutput    String
+  isHidden          Boolean               @default(false)
+  timeoutMs         Int                   @default(5000)
+  orderIndex        Int
+  executionResults  CodeExecutionResult[]
+  questionVersion   QuestionVersion       @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+
+  @@map("question_test_cases")
+}
+
+model Exam {
+  id                  String              @id @default(uuid())
+  institutionId       String
+  title               String
+  description         String?
+  scheduledStartTime  DateTime
+  scheduledEndTime    DateTime
+  durationMinutes     Int
+  status              ExamStatus          @default(DRAFT)
+  isAdaptive          Boolean             @default(false)
+  maxAttempts         Int                 @default(1)
+  cooldownHours       Int                 @default(0)
+  challengeWindowDays Int                 @default(7)
+  resultStatus        ResultStatus        @default(PENDING_REVIEW)
+  totalMarks          Float
+  passingScore        Float
+  createdById         String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  collusionPairs      CollusionPair[]
+  adaptiveConfig      ExamAdaptiveConfig?
+  enrollments         ExamEnrollment[]
+  poolConfigs         ExamPoolConfig[]
+  questions           ExamQuestion[]
+  createdBy           User                @relation("ExamCreator", fields: [createdById], references: [id])
+  institution         Institution         @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  analytics           QuestionAnalytics[]
+
+  @@index([institutionId, status])
+  @@index([scheduledStartTime, scheduledEndTime])
+  @@map("exams")
+}
+
+model ExamPoolConfig {
+  id     String       @id @default(uuid())
+  examId String
+  poolId String
+  quota  Int
+  exam   Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  pool   QuestionPool @relation(fields: [poolId], references: [id])
+
+  @@unique([examId, poolId])
+  @@map("exam_pool_configs")
+}
+
+model ExamQuestion {
+  id                String               @id @default(uuid())
+  examId            String
+  questionId        String
+  questionVersionId String
+  orderIndex        Int
+  poolId            String
+  attemptQuestions  AttemptQuestionSet[]
+  candidateAnswers  CandidateAnswer[]
+  exam              Exam                 @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question          Question             @relation(fields: [questionId], references: [id])
+  questionVersion   QuestionVersion      @relation(fields: [questionVersionId], references: [id])
+
+  @@unique([examId, questionId])
+  @@map("exam_questions")
+}
+
+model ExamAdaptiveConfig {
+  id                  String           @id @default(uuid())
+  examId              String           @unique
+  targetDifficultySum Float
+  difficultyTolerance Float            @default(0.1)
+  exam                Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  topicQuotas         ExamTopicQuota[]
+
+  @@map("exam_adaptive_configs")
+}
+
+model ExamTopicQuota {
+  id               String             @id @default(uuid())
+  adaptiveConfigId String
+  topic            String
+  minQuestions     Int
+  maxQuestions     Int
+  targetDifficulty Float?
+  config           ExamAdaptiveConfig @relation(fields: [adaptiveConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([adaptiveConfigId, topic])
+  @@map("exam_topic_quotas")
+}
+
+model ExamEnrollment {
+  id                      String               @id @default(uuid())
+  examId                  String
+  candidateId             String
+  attemptNumber           Int                  @default(1)
+  status                  EnrollmentStatus     @default(ENROLLED)
+  accommodationType       AccommodationType    @default(NONE)
+  adjustedDurationMinutes Int?
+  enrolledAt              DateTime             @default(now())
+  accommodationId         String?
+  effectiveEndTime        DateTime?
+  effectiveStartTime      DateTime?
+  attemptQuestions        AttemptQuestionSet[]
+  accommodation           Accommodation?       @relation(fields: [accommodationId], references: [id])
+  candidate               User                 @relation(fields: [candidateId], references: [id])
+  exam                    Exam                 @relation(fields: [examId], references: [id], onDelete: Cascade)
+  result                  ExamResult?
+  session                 ExamSession?
+
+  @@unique([examId, candidateId, attemptNumber])
+  @@index([candidateId, effectiveStartTime, effectiveEndTime])
+  @@map("exam_enrollments")
+}
+
+model AttemptQuestionSet {
+  id                    String          @id @default(uuid())
+  enrollmentId          String
+  examQuestionId        String
+  questionVersionId     String
+  orderIndex            Int
+  difficultyAtSelection Int?
+  enrollment            ExamEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  examQuestion          ExamQuestion    @relation(fields: [examQuestionId], references: [id])
+  questionVersion       QuestionVersion @relation(fields: [questionVersionId], references: [id])
+
+  @@unique([enrollmentId, examQuestionId])
+  @@map("attempt_question_sets")
+}
+
+model ExamSession {
+  id                    String                  @id @default(uuid())
+  enrollmentId          String                  @unique
+  startedAt             DateTime                @default(now())
+  serverDeadline        DateTime
+  pausedAt              DateTime?
+  totalPausedSeconds    Int                     @default(0)
+  currentQuestionIndex  Int                     @default(0)
+  runningAccuracy       Float                   @default(0)
+  questionsAnswered     Int                     @default(0)
+  correctAnswers        Int                     @default(0)
+  tabSwitchCount        Int                     @default(0)
+  isLocked              Boolean                 @default(false)
+  lockedAt              DateTime?
+  lockReason            String?
+  proctorUnlockedAt     DateTime?
+  finishedAt            DateTime?
+  ipAddress             String?
+  userAgent             String?
+  autoPauseAdjustmentMs Int?
+  autoPauseTriggered    Boolean                 @default(false)
+  answers               CandidateAnswer[]
+  collusionPairsA       CollusionPair[]         @relation("CollusionSessionA")
+  collusionPairsB       CollusionPair[]         @relation("CollusionSessionB")
+  enrollment            ExamEnrollment          @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  flags                 ProctorFlag[]
+  snapshots             ProctorSnapshot[]
+  timeAdjustments       SessionTimeAdjustment[]
+  violations            ViolationLog[]
+
+  @@map("exam_sessions")
+}
+
+model SessionTimeAdjustment {
+  id               String      @id @default(uuid())
+  sessionId        String
+  adjustedById     String
+  previousDeadline DateTime
+  newDeadline      DateTime
+  reason           String
+  adjustedAt       DateTime    @default(now())
+  adjustedBy       User        @relation("TimeAdjuster", fields: [adjustedById], references: [id])
+  session          ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("session_time_adjustments")
+}
+
+model CandidateAnswer {
+  id               String                @id @default(uuid())
+  sessionId        String
+  examQuestionId   String
+  answerContent    String?
+  codeSubmission   String?
+  answeredAt       DateTime              @default(now())
+  timeTakenSeconds Int                   @default(0)
+  autoScore        Float?
+  manualScore      Float?
+  finalScore       Float?
+  isGraded         Boolean               @default(false)
+  gradedById       String?
+  examQuestion     ExamQuestion          @relation(fields: [examQuestionId], references: [id])
+  gradedBy         User?                 @relation("AnswerGrader", fields: [gradedById], references: [id])
+  session          ExamSession           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  codeResults      CodeExecutionResult[]
+  reEvalRequests   ReEvaluationRequest[]
+
+  @@unique([sessionId, examQuestionId])
+  @@map("candidate_answers")
+}
+
+model CodeExecutionResult {
+  id                String           @id @default(uuid())
+  candidateAnswerId String
+  testCaseId        String
+  questionVersionId String
+  passed            Boolean
+  actualOutput      String?
+  runtimeMs         Int?
+  errorOutput       String?
+  timedOut          Boolean          @default(false)
+  candidateAnswer   CandidateAnswer  @relation(fields: [candidateAnswerId], references: [id], onDelete: Cascade)
+  questionVersion   QuestionVersion  @relation(fields: [questionVersionId], references: [id])
+  testCase          QuestionTestCase @relation(fields: [testCaseId], references: [id])
+
+  @@unique([candidateAnswerId, testCaseId])
+  @@map("code_execution_results")
+}
+
+model ProctorSnapshot {
+  id              String        @id @default(uuid())
+  sessionId       String
+  imageUrl        String
+  capturedAt      DateTime      @default(now())
+  faceDetected    Boolean       @default(true)
+  multipleFaces   Boolean       @default(false)
+  candidateAbsent Boolean       @default(false)
+  flags           ProctorFlag[]
+  session         ExamSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("proctor_snapshots")
+}
+
+model ProctorFlag {
+  id           String           @id @default(uuid())
+  sessionId    String
+  snapshotId   String?
+  flagType     FlagType
+  description  String?
+  severity     Int              @default(1)
+  reviewedById String?
+  reviewStatus ReviewStatus     @default(PENDING)
+  reviewedAt   DateTime?
+  reviewNotes  String?
+  createdAt    DateTime         @default(now())
+  reviewedBy   User?            @relation("FlagReviewer", fields: [reviewedById], references: [id])
+  session      ExamSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  snapshot     ProctorSnapshot? @relation(fields: [snapshotId], references: [id])
+
+  @@index([sessionId, reviewStatus])
+  @@map("proctor_flags")
+}
+
+model ViolationLog {
+  id         String        @id @default(uuid())
+  sessionId  String
+  type       ViolationType
+  occurredAt DateTime      @default(now())
+  metadata   Json?
+  session    ExamSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, occurredAt])
+  @@map("violation_logs")
+}
+
+model ExamResult {
+  id                 String                @id @default(uuid())
+  enrollmentId       String                @unique
+  totalScore         Float
+  maxScore           Float
+  percentage         Float
+  passed             Boolean
+  integrityScore     Float?
+  timingAnomalyCount Int                   @default(0)
+  collusionScore     Float?
+  status             ResultStatus          @default(PENDING_REVIEW)
+  publishedAt        DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  enrollment         ExamEnrollment        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  reEvalRequests     ReEvaluationRequest[]
+
+  @@map("exam_results")
+}
+
+model CollusionPair {
+  id              String      @id @default(uuid())
+  examId          String
+  sessionAId      String
+  sessionBId      String
+  similarityScore Float
+  matchingAnswers Int
+  totalAnswers    Int
+  evidence        Json?
+  flaggedAt       DateTime    @default(now())
+  exam            Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  sessionA        ExamSession @relation("CollusionSessionA", fields: [sessionAId], references: [id])
+  sessionB        ExamSession @relation("CollusionSessionB", fields: [sessionBId], references: [id])
+
+  @@unique([sessionAId, sessionBId])
+  @@map("collusion_pairs")
+}
+
+model ReEvaluationRequest {
+  id                String          @id @default(uuid())
+  resultId          String
+  candidateAnswerId String
+  justification     String
+  status            ReEvalStatus    @default(PENDING)
+  reviewedById      String?
+  reviewNotes       String?
+  previousScore     Float?
+  newScore          Float?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  candidateAnswer   CandidateAnswer @relation(fields: [candidateAnswerId], references: [id])
+  result            ExamResult      @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  reviewedBy        User?           @relation("ReEvalReviewer", fields: [reviewedById], references: [id])
+
+  @@map("re_evaluation_requests")
+}
+
+model QuestionAnalytics {
+  id                  String          @id @default(uuid())
+  questionVersionId   String
+  examId              String
+  totalAttempts       Int
+  correctAttempts     Int
+  difficultyIndex     Float
+  discriminationIndex Float?
+  distractorAnalysis  Json?
+  isFlagged           Boolean         @default(false)
+  computedAt          DateTime        @default(now())
+  exam                Exam            @relation(fields: [examId], references: [id])
+  questionVersion     QuestionVersion @relation(fields: [questionVersionId], references: [id])
+
+  @@unique([questionVersionId, examId])
+  @@map("question_analytics")
+}
+
+model Accommodation {
+  id           String               @id @default(uuid())
+  candidateId  String
+  type         AccommodationType
+  reason       String
+  approvedById String
+  validFrom    DateTime
+  validUntil   DateTime?
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  audits       AccommodationAudit[]
+  approvedBy   User                 @relation("AccommodationApprover", fields: [approvedById], references: [id])
+  candidate    User                 @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  enrollments  ExamEnrollment[]
+
+  @@map("accommodations")
+}
+
+model AccommodationAudit {
+  id              String              @id @default(uuid())
+  accommodationId String
+  action          AccommodationAction
+  performedById   String
+  details         String?
+  timestamp       DateTime            @default(now())
+  accommodation   Accommodation       @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  performedBy     User                @relation("AuditPerformer", fields: [performedById], references: [id])
+
+  @@map("accommodation_audits")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  type        NotificationType
+  title       String
+  message     String
+  metadata    Json?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  recipient   User             @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
+  @@map("notifications")
+}
+
+enum GlobalRole {
+  SUPER_ADMIN
+  CANDIDATE
+}
+
+enum InstitutionRole {
+  ADMIN
+  EXAMINER
+  PROCTOR
+  CANDIDATE
+}
+
+enum QuestionType {
+  MCQ
+  MULTI_SELECT
+  FILL_BLANK
+  SHORT_ANSWER
+  CODE
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+  LOCKED
+  ABANDONED
+}
+
+enum AccommodationType {
+  NONE
+  TIME_1_5X
+  TIME_2X
+}
+
+enum FlagType {
+  NO_FACE
+  MULTIPLE_FACES
+  ABSENT_60S
+  TAB_SWITCH
+  TIMING_ANOMALY
+  FOCUS_LOSS
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  DISMISSED
+}
+
+enum ViolationType {
+  TAB_SWITCH
+  FOCUS_LOSS
+  BROWSER_RESIZE
+}
+
+enum ResultStatus {
+  PENDING_REVIEW
+  PUBLISHED
+}
+
+enum ReEvalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccommodationAction {
+  GRANTED
+  REVOKED
+  MODIFIED
+}
+
+enum NotificationType {
+  EXAM_CONFLICT
+  PROCTOR_FLAG
+  RESULT_PUBLISHED
+  RE_EVALUATION_UPDATE
+  EXAM_RESCHEDULE
+  EXAM_LOCKED
+  GENERAL
+}
