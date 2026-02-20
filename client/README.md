@@ -1,48 +1,64 @@
-# React + TypeScript + Vite
+# Online Examination Proctoring Platform - Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Online Examination Proctoring Platform. It is built using modern web technologies to provide a secure, responsive, and intuitive interface for candidates, examiners, proctors, and administrators.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Candidate Dashboard:** View available exams, upcoming schedules, and past results.
+- **Examiner Dashboard:** Create and manage question pools, add different types of questions (MCQ, Multi-select, Fill in the blanks, Short Answer, Coding Problems), schedule exams, and review candidate results.
+- **Proctor Dashboard:** Live monitoring of active exam sessions, receiving flags/alerts for anomalous behavior, and managing live session integrity.
+- **Admin Dashboard:** Manage institutions, departments, and onboarding examiners and proctors.
+- **Exam Taking Interface:** Secure browser environment with live webcam proctoring, timer, and adaptive/fixed question delivery.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Framework:** React + Vite
+- **Language:** TypeScript
+- **State Management:** Redux Toolkit & RTK Query
+- **Styling:** Tailwind CSS
+- **Routing:** React Router DOM
+- **Form Handling:** React Hook Form + Yup (Validation)
 
-- Configure the top-level `parserOptions` property like this:
+## Getting Started
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
+
+1. Copy the `.env.example` to `.env` and fill in the necessary environment variables:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running the Application
+
+To start the development server:
+
+```bash
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+The application will be available at `http://localhost:5173` (or the port specified by Vite).
 
-```js
-// eslint.config.js
-import react from "eslint-plugin-react";
+### Building for Production
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: "18.3" } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    ...react.configs.recommended.rules,
-    ...react.configs["jsx-runtime"].rules,
-  },
-});
+To create a production build:
+
+```bash
+npm run build
+```
+
+To preview the production build locally:
+
+```bash
+npm run preview
 ```
