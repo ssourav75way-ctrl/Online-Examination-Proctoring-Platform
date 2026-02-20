@@ -1,6 +1,6 @@
 import { InstitutionRole } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface CreateInstitutionRequestDTO {
   name: string;
@@ -22,7 +22,7 @@ export interface UpdateMemberDepartmentsRequestDTO {
   departmentIds: string[];
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface InstitutionListItemDTO {
   id: string;

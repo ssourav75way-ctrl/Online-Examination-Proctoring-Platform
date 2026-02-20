@@ -4,12 +4,17 @@ import * as yup from "yup";
 import { CONSTANTS } from "@/constants";
 import { Input } from "@/components/common/Input";
 import { Button } from "@/components/common/Button";
-import { useCreateQuestionPoolMutation } from "@/services/questionApi";
+import {
+  useCreateQuestionPoolMutation,
+  useUpdateQuestionPoolMutation,
+  QuestionPool,
+} from "@/services/questionApi";
 import { useGetDepartmentsQuery } from "@/services/institutionApi";
 
 interface QuestionPoolFormModalProps {
   institutionId: string;
   onClose: () => void;
+  poolToEdit?: QuestionPool;
 }
 
 const poolSchema = yup.object().shape({
@@ -23,8 +28,15 @@ type PoolFormData = yup.InferType<typeof poolSchema>;
 export function QuestionPoolFormModal({
   institutionId,
   onClose,
+  poolToEdit,
 }: QuestionPoolFormModalProps) {
-  const [createPool, { isLoading, error }] = useCreateQuestionPoolMutation();
+  const [createPool, { isLoading: isCreating, error: createError }] =
+    useCreateQuestionPoolMutation();
+  const [updatePool, { isLoading: isUpdating, error: updateError }] =
+    useUpdateQuestionPoolMutation();
+  const isLoading = isCreating || isUpdating;
+  const error = poolToEdit ? updateError : createError;
+
   const { data: deptData } = useGetDepartmentsQuery(institutionId, {
     skip: !institutionId,
   });
@@ -36,17 +48,35 @@ export function QuestionPoolFormModal({
   } = useForm<PoolFormData>({
     resolver: yupResolver(poolSchema),
     mode: "onTouched",
+    defaultValues: poolToEdit
+      ? {
+          name: poolToEdit.name,
+          description: poolToEdit.description || "",
+          departmentId: poolToEdit.departmentId,
+        }
+      : undefined,
   });
 
   const onSubmit = async (data: PoolFormData) => {
     try {
-      await createPool({
-        institutionId,
-        body: { ...data, isShared: false },
-      }).unwrap();
+      if (poolToEdit) {
+        await updatePool({
+          institutionId,
+          poolId: poolToEdit.id,
+          body: data,
+        }).unwrap();
+      } else {
+        await createPool({
+          institutionId,
+          body: { ...data, isShared: false },
+        }).unwrap();
+      }
       onClose();
     } catch (err) {
-      console.error("Failed to create question pool:", err);
+      console.error(
+        `Failed to ${poolToEdit ? "update" : "create"} question pool:`,
+        err,
+      );
     }
   };
 
@@ -55,7 +85,7 @@ export function QuestionPoolFormModal({
     if (typeof error === "object" && "data" in error) {
       return (
         (error as { data?: { message?: string } }).data?.message ||
-        "Failed to create pool"
+        `Failed to ${poolToEdit ? "update" : "create"} pool`
       );
     }
     return "An unexpected error occurred";
@@ -69,13 +99,13 @@ export function QuestionPoolFormModal({
       <div className="card w-full max-w-lg p-6 animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-text-main">
-            Create Question Pool
+            {poolToEdit ? "Edit Question Pool" : "Create Question Pool"}
           </h2>
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
           >
-            ✕
+            
           </button>
         </div>
 
@@ -138,7 +168,7 @@ export function QuestionPoolFormModal({
               Cancel
             </Button>
             <Button type="submit" isLoading={isLoading}>
-              Save Pool
+              {poolToEdit ? "Save Changes" : "Save Pool"}
             </Button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 import { cn } from "../../utils/cn";
 
-// Banning switch cases, using object map for variants
+
 const buttonVariants: Record<
   "primary" | "secondary" | "danger" | "ghost",
   string
@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {/* Loading Spinner replacing Ternary Logic explicitly */}
+        {}
         {isLoading && (
           <svg
             className="mr-2 h-4 w-4 animate-spin"

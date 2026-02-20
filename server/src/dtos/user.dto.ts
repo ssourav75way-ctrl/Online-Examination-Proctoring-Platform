@@ -1,6 +1,6 @@
 import { GlobalRole } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface UpdateUserRequestDTO {
   firstName?: string;
@@ -9,7 +9,7 @@ export interface UpdateUserRequestDTO {
   screenReaderEnabled?: boolean;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface UserListItemDTO {
   id: string;

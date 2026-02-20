@@ -1,21 +1,21 @@
 import { apiSlice } from "./api";
-import { ExamSession } from "@/types/exam";
+import {
+  ExamSession,
+  QuestionItem,
+  TimerState,
+  CandidateAnswer,
+} from "@/types/modules/exam.types";
 
 interface SessionStatus {
   session: ExamSession;
-  timerState: {
-    remainingSeconds: number;
-    isExpired: boolean;
-    isPaused: boolean;
-    serverDeadline: string;
-    totalPausedSeconds: number;
-  };
+  timerState: TimerState;
 }
 
 interface AnswerResult {
-  answerId: string;
-  autoScore: number | null;
-  isCorrect: boolean | null;
+  answer: CandidateAnswer;
+  nextQuestion: QuestionItem | null;
+  timerState: TimerState;
+  isLastQuestion: boolean;
 }
 
 interface ViolationResult {
@@ -26,7 +26,13 @@ interface ViolationResult {
 export const sessionApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     startSession: builder.mutation<
-      { data: { session: ExamSession; questions: unknown[] } },
+      {
+        data: {
+          session: ExamSession;
+          timerState: TimerState;
+          currentQuestion: QuestionItem;
+        };
+      },
       { enrollmentId: string }
     >({
       query: ({ enrollmentId }) => ({
@@ -45,6 +51,7 @@ export const sessionApi = apiSlice.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["ExamMarkers"],
     }),
 
     reconnectSession: builder.query<
@@ -59,6 +66,20 @@ export const sessionApi = apiSlice.injectEndpoints({
       { sessionId: string }
     >({
       query: ({ sessionId }) => `/exam-sessions/${sessionId}/status`,
+    }),
+    getQuestion: builder.query<
+      { data: { question: QuestionItem; answer: CandidateAnswer | null } },
+      { sessionId: string; index: number }
+    >({
+      query: ({ sessionId, index }) =>
+        `/exam-sessions/${sessionId}/questions/${index}`,
+    }),
+    getMarkers: builder.query<
+      { data: { id: string; index: number; isAnswered: boolean }[] },
+      { sessionId: string }
+    >({
+      query: ({ sessionId }) => `/exam-sessions/${sessionId}/markers`,
+      providesTags: ["ExamMarkers"],
     }),
 
     reportViolation: builder.mutation<
@@ -83,7 +104,6 @@ export const sessionApi = apiSlice.injectEndpoints({
       invalidatesTags: ["ExamSession"],
     }),
 
-    // Proctor actions
     proctorUnlock: builder.mutation<
       { data: ExamSession },
       { sessionId: string }
@@ -112,6 +132,8 @@ export const {
   useSubmitAnswerMutation,
   useLazyReconnectSessionQuery,
   useLazyGetSessionStatusQuery,
+  useLazyGetQuestionQuery,
+  useGetMarkersQuery,
   useReportViolationMutation,
   useFinishSessionMutation,
   useProctorUnlockMutation,

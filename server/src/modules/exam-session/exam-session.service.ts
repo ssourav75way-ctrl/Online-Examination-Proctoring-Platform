@@ -104,7 +104,7 @@ export class ExamSessionService {
     if (!session) throw new NotFoundError("Session not found");
     if (session.finishedAt) throw new BadRequestError("Exam already finished");
     if (session.isLocked)
-      throw new BadRequestError("Exam is locked — awaiting proctor approval");
+      throw new BadRequestError("Exam is locked  awaiting proctor approval");
 
     const timerState = timerService.getTimerState(
       session.serverDeadline,
@@ -160,7 +160,7 @@ export class ExamSessionService {
     });
 
     const newQuestionsAnswered = session.questionsAnswered + 1;
-    const newCorrectAnswers = session.correctAnswers; // Will be updated by grading
+    const newCorrectAnswers = session.correctAnswers; 
     const newAccuracy =
       newQuestionsAnswered > 0 ? newCorrectAnswers / newQuestionsAnswered : 0;
 
@@ -303,7 +303,7 @@ export class ExamSessionService {
           data: {
             sessionId,
             flagType: "TAB_SWITCH",
-            description: `${newTabSwitchCount} tab switches detected — exam locked`,
+            description: `${newTabSwitchCount} tab switches detected  exam locked`,
             severity: 4,
           },
         });
@@ -336,7 +336,7 @@ export class ExamSessionService {
     const now = new Date();
     let additionalPausedSeconds = 0;
 
-    // If proctor took > 5 minutes, retroactively adjust timer
+    
     if (session.lockedAt) {
       additionalPausedSeconds = timerService.calculateProctorAutoAdjustment(
         session.lockedAt,
@@ -366,9 +366,7 @@ export class ExamSessionService {
     };
   }
 
-  /**
-   * Manually extend time (proctor approved).
-   */
+  
   async extendTime(sessionId: string, additionalMinutes: number) {
     const session = await prisma.examSession.findUnique({
       where: { id: sessionId },
@@ -394,9 +392,7 @@ export class ExamSessionService {
     };
   }
 
-  /**
-   * Finish the exam session.
-   */
+  
   async finishSession(sessionId: string) {
     const session = await prisma.examSession.findUnique({
       where: { id: sessionId },
@@ -459,6 +455,82 @@ export class ExamSessionService {
       session,
       timerState,
     };
+  }
+
+  async getQuestionByIndex(sessionId: string, index: number) {
+    const session = await prisma.examSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        enrollment: { include: { exam: true } },
+      },
+    });
+
+    if (!session) throw new NotFoundError("Session not found");
+    if (session.finishedAt) throw new BadRequestError("Exam already finished");
+    if (session.enrollment.exam.isAdaptive) {
+      throw new BadRequestError("Navigation not supported for adaptive exams");
+    }
+
+    const question = await adaptiveEngineService.getNextQuestionSequential(
+      sessionId,
+      session.enrollment.examId,
+      index,
+    );
+
+    if (!question) throw new NotFoundError("Question at this index not found");
+
+    
+    const answer = await prisma.candidateAnswer.findUnique({
+      where: {
+        sessionId_examQuestionId: {
+          sessionId,
+          examQuestionId: question.examQuestionId,
+        },
+      },
+    });
+
+    return {
+      question,
+      answer: answer
+        ? {
+            answerContent: answer.answerContent,
+            codeSubmission: answer.codeSubmission,
+          }
+        : null,
+    };
+  }
+
+  async getSessionQuestionMarkers(sessionId: string) {
+    const session = await prisma.examSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        enrollment: {
+          include: {
+            exam: {
+              include: {
+                questions: {
+                  orderBy: { orderIndex: "asc" },
+                  select: { id: true, orderIndex: true },
+                },
+              },
+            },
+          },
+        },
+        answers: {
+          select: { examQuestionId: true },
+        },
+      },
+    });
+
+    if (!session) throw new NotFoundError("Session not found");
+
+    const answeredIds = new Set(session.answers.map((a) => a.examQuestionId));
+
+    return session.enrollment.exam.questions.map((q) => ({
+      id: q.id,
+      index: q.orderIndex,
+      isAnswered: answeredIds.has(q.id),
+    }));
   }
 
   private getInitialAdaptiveState(): AdaptiveState {

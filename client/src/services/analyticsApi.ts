@@ -1,81 +1,50 @@
 import { apiSlice } from "./api";
 
-interface QuestionAnalyticsData {
+export interface DistractorInfo {
+  optionId: string;
+  optionText: string;
+  selectionCount: number;
+  selectionPercentage: number;
+}
+
+export interface QuestionAnalytics {
   questionId: string;
-  questionVersionId: string;
-  content: string;
-  topic: string;
-  difficulty: number;
-  totalAttempts: number;
-  correctAttempts: number;
   difficultyIndex: number;
-  discriminationIndex: number | null;
-  isFlagged: boolean;
+  discriminationIndex: number;
+  distractorAnalysis: DistractorInfo[];
+  flaggedForReview: boolean;
+  flagReason: string | null;
 }
 
-interface ExamAnalytics {
-  examId: string;
-  totalCandidates: number;
-  averageScore: number;
-  passRate: number;
-  questions: QuestionAnalyticsData[];
-}
-
-interface DistractorAnalysis {
-  questionId: string;
-  options: Record<string, number>;
-  totalResponses: number;
-}
-
-interface IntegrityReportEntry {
+export interface CandidateIntegrityReport {
   candidateId: string;
   candidateName: string;
   integrityScore: number;
-  timingAnomalyCount: number;
-  collusionScore: number | null;
-  proctorFlagCount: number;
-  tabSwitchCount: number;
+  proctorFlags: number;
+  timingAnomalies: number;
+  collusionScore: number;
+  tabSwitches: number;
+  evidenceIds: string[];
 }
 
 export const analyticsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getExamAnalytics: builder.query<
-      { data: ExamAnalytics },
+      { data: QuestionAnalytics[] },
       { examId: string }
     >({
       query: ({ examId }) => `/analytics/exams/${examId}`,
       providesTags: ["Analytics"],
     }),
-
     getIntegrityReport: builder.query<
-      { data: IntegrityReportEntry[] },
+      { data: CandidateIntegrityReport[] },
       { examId: string }
     >({
       query: ({ examId }) => `/analytics/exams/${examId}/integrity`,
       providesTags: ["Analytics"],
     }),
-
-    getQuestionDifficulty: builder.query<
-      { data: { difficultyIndex: number } },
-      { examQuestionId: string }
-    >({
-      query: ({ examQuestionId }) =>
-        `/analytics/questions/${examQuestionId}/difficulty`,
-    }),
-
-    getDistractorAnalysis: builder.query<
-      { data: DistractorAnalysis },
-      { examQuestionId: string }
-    >({
-      query: ({ examQuestionId }) =>
-        `/analytics/questions/${examQuestionId}/distractors`,
-    }),
   }),
 });
 
-export const {
-  useGetExamAnalyticsQuery,
-  useGetIntegrityReportQuery,
-  useGetQuestionDifficultyQuery,
-  useGetDistractorAnalysisQuery,
-} = analyticsApi;
+export const { useGetExamAnalyticsQuery, useGetIntegrityReportQuery } =
+  analyticsApi;

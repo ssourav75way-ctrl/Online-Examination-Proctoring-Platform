@@ -17,7 +17,27 @@ export const userApi = apiSlice.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    updateProfile: builder.mutation<
+      { data: any },
+      {
+        firstName?: string;
+        lastName?: string;
+        highContrastMode?: boolean;
+        screenReaderEnabled?: boolean;
+      }
+    >({
+      query: (body) => ({
+        url: "/users/profile",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User", "Auth"],
+    }),
   }),
 });
 
-export const { useSearchCandidateQuery, useLazySearchCandidateQuery } = userApi;
+export const {
+  useSearchCandidateQuery,
+  useLazySearchCandidateQuery,
+  useUpdateProfileMutation,
+} = userApi;

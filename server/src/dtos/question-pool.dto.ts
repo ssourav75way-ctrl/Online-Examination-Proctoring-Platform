@@ -1,4 +1,4 @@
-/* ─── Request DTOs ─── */
+
 
 export interface CreateQuestionPoolRequestDTO {
   departmentId: string;
@@ -13,7 +13,7 @@ export interface UpdateQuestionPoolRequestDTO {
   isShared?: boolean;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface QuestionPoolItemDTO {
   id: string;

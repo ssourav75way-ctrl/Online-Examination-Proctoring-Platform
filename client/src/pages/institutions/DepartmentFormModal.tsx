@@ -69,7 +69,7 @@ export function DepartmentFormModal({
             className="text-text-muted hover:text-text-main focus:outline-none"
             aria-label="Close"
           >
-            ✕
+            
           </button>
         </div>
 

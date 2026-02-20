@@ -5,7 +5,9 @@ import {
   ProctorFlag,
 } from "@/services/proctorApi";
 import { Button } from "@/components/common/Button";
+import { useSelector } from "react-redux";
 import { CONSTANTS } from "@/constants";
+import { ProctorLiveGallery } from "./ProctorLiveGallery";
 
 import { formatDateIST as formatDate } from "@/utils/dateFormat";
 
@@ -37,12 +39,18 @@ const severityBadgeMap: Record<number, { label: string; classes: string }> = {
   },
   5: { label: "Severe", classes: "bg-red-100 text-red-800 border-red-200" },
 };
+import { RootState } from "@/store";
 
 export function ProctorQueuePage() {
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<"review" | "live">("review");
+  const user = useSelector((state: RootState) => state.auth.user);
+  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+
   const { data, isLoading, isError, error } = useGetPendingFlagsQuery({
     page,
     limit: CONSTANTS.PAGINATION.DEFAULT_LIMIT,
+    institutionId,
   });
   const [reviewFlag] = useReviewFlagMutation();
 
@@ -106,7 +114,7 @@ export function ProctorQueuePage() {
           {formatDate(flag.createdAt)}
         </td>
         <td className="px-6 py-4 text-right">
-          <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-2 justify-end">
             <Button
               variant="ghost"
               size="sm"
@@ -150,82 +158,115 @@ export function ProctorQueuePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-main">
-            Proctor Review Queue
+            Proctor Monitoring Hub
           </h1>
           <p className="text-text-muted mt-1">
-            Review flagged exam sessions and candidate anomalies.
+            Maintain exam integrity through live monitoring and anomaly review.
           </p>
         </div>
       </div>
 
-      {isLoading && (
-        <div className="card p-8 flex justify-center items-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
-        </div>
-      )}
+      {}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab("review")}
+          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+            activeTab === "review"
+              ? "border-primary-600 text-primary-600"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Flag Review Queue
+        </button>
+        <button
+          onClick={() => setActiveTab("live")}
+          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+            activeTab === "live"
+              ? "border-primary-600 text-primary-600"
+              : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          Live Gallery View
+        </button>
+      </div>
 
-      {errorMessage && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
-          {errorMessage}
-        </div>
-      )}
-
-      {!isLoading && !isError && data && (
-        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden">
-          <table className="w-full text-left text-sm text-slate-700">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200">
-              <tr>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Candidate
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Exam
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Flag Type
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Severity
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Flagged At
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {renderTableRows()}
-            </tbody>
-          </table>
-
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500">
-              Page {page} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              >
-                Next
-              </Button>
+      {activeTab === "live" ? (
+        <ProctorLiveGallery institutionId={institutionId} />
+      ) : (
+        <>
+          {isLoading && (
+            <div className="card p-8 flex justify-center items-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
             </div>
-          </div>
-        </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+              {errorMessage}
+            </div>
+          )}
+
+          {!isLoading && !isError && data && (
+            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden">
+              <table className="w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th scope="col" className="px-6 py-4 font-semibold">
+                      Candidate
+                    </th>
+                    <th scope="col" className="px-6 py-4 font-semibold">
+                      Exam
+                    </th>
+                    <th scope="col" className="px-6 py-4 font-semibold">
+                      Flag Type
+                    </th>
+                    <th scope="col" className="px-6 py-4 font-semibold">
+                      Severity
+                    </th>
+                    <th scope="col" className="px-6 py-4 font-semibold">
+                      Flagged At
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-4 font-semibold text-right"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {renderTableRows()}
+                </tbody>
+              </table>
+
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-500">
+                  Page {page} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

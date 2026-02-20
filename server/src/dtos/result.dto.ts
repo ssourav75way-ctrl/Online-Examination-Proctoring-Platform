@@ -1,6 +1,6 @@
 import { ResultStatus, ReEvalStatus } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface FileReEvaluationRequestDTO {
   resultId: string;
@@ -14,7 +14,7 @@ export interface ProcessReEvaluationRequestDTO {
   reviewNotes?: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface ExamResultDTO {
   id: string;

@@ -34,8 +34,7 @@ export class DepartmentController {
       const institutionId = req.params.institutionId as string;
       const departmentIds = req.scopedUser?.departmentIds;
 
-      // Use any cast to bypass transient TS signature mismatch while ensuring correct argument passing
-      const depts = await (departmentService as any).getByInstitution(
+      const depts = await departmentService.getByInstitution(
         institutionId,
         departmentIds,
       );

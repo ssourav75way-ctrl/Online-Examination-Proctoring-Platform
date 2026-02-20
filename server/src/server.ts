@@ -7,11 +7,11 @@ import { appConfig } from "./config";
 
 const startServer = async (): Promise<void> => {
   try {
-    // Test database connection
+    
     await prisma.$connect();
     console.log(" Database connected successfully");
 
-    // Start server
+    
     app.listen(appConfig.port, () => {
       console.log(
         ` Server running on port ${appConfig.port} in ${appConfig.nodeEnv} mode`,
@@ -27,7 +27,7 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Graceful shutdown
+
 const shutdown = async (): Promise<void> => {
   console.log("\n Shutting down gracefully...");
   await prisma.$disconnect();

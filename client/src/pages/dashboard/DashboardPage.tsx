@@ -11,10 +11,12 @@ import { useGetExamsByInstitutionQuery } from "@/services/examApi";
 import { useGetQuestionPoolsQuery } from "@/services/questionApi";
 import { useGetPendingFlagsQuery } from "@/services/proctorApi";
 import { QuestionPoolFormModal } from "../questions/QuestionPoolFormModal";
+import { QuestionFormModal } from "../questions/QuestionFormModal";
 import { ExamFormModal } from "../exams/ExamFormModal";
 import { MemberAddModal } from "../institutions/MemberAddModal";
 import { DepartmentFormModal } from "../institutions/DepartmentFormModal";
 import { cn } from "@/utils/cn";
+import { ClockIcon } from "@/components/common/Icons";
 
 interface StatCard {
   title: string;
@@ -76,6 +78,7 @@ const StatWidget = ({
 export function DashboardPage() {
   const navigate = useNavigate();
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false);
+  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -88,12 +91,11 @@ export function DashboardPage() {
   );
 
   const userRole = effectiveRole || String(user?.globalRole || "");
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
 
-  // Data fetching for different roles
-  // Allow all roles to fetch institutions to potentially find context
   const { data: instData, isLoading: instLoading } = useGetInstitutionsQuery(
     { page: 1, limit: 1 },
-    { skip: userRole === "PROCTOR" }, // Allow candidates to fetch institutions
+    { skip: userRole === "PROCTOR" },
   );
 
   const institutionId =
@@ -126,20 +128,13 @@ export function DashboardPage() {
 
   const dashboards: Record<string, () => JSX.Element> = {
     SUPER_ADMIN: () => (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatWidget
           title="Total Institutions"
           value={instData?.meta?.total || 0}
           description="System-wide management"
           isLoading={instLoading}
           onClick={() => navigate("/dashboard/institutions")}
-        />
-        <StatWidget
-          title="Global Exams"
-          value={examData?.meta?.total || 0}
-          description="All institutions"
-          isLoading={examLoading}
-          onClick={() => navigate("/dashboard/exams")}
         />
         <StatWidget
           title="System Audit"
@@ -285,6 +280,13 @@ export function DashboardPage() {
               >
                 Manage Question Bank
               </Button>
+              <Button
+                size="lg"
+                className="shadow-soft"
+                onClick={() => setIsQuestionModalOpen(true)}
+              >
+                + Add Question
+              </Button>
             </>
           )}
           {userRole === "ADMIN" && (
@@ -338,51 +340,41 @@ export function DashboardPage() {
         <RenderDashboard />
       </div>
 
-      <div className="mt-12 card p-8 border border-border/60 shadow-sm bg-white">
-        <h3 className="text-xl font-bold text-text-main mb-6 flex items-center gap-2">
-          <svg
-            className="w-5 h-5 text-primary-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button
-            variant="secondary"
-            onClick={() => navigate("/dashboard/exams")}
-          >
-            View Exam Schedule
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate("/dashboard/questions")}
-          >
-            Access Question PooL
-          </Button>
-          {userRole === "PROCTOR" && (
+      {!isSuperAdmin && (
+        <div className="mt-12 card p-8 border border-border/60 shadow-sm bg-white">
+          <h3 className="text-xl font-bold text-text-main mb-6 flex items-center gap-2">
+            <ClockIcon className="w-5 h-5 text-primary-600" />
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button
               variant="secondary"
-              onClick={() => navigate("/dashboard/sessions")}
+              onClick={() => navigate("/dashboard/exams")}
             >
-              Monitor Live Sessions
+              View Exam Schedule
             </Button>
-          )}
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            Refresh Dashboard
-          </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/dashboard/questions")}
+            >
+              Access Question PooL
+            </Button>
+            {userRole === "PROCTOR" && (
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/dashboard/sessions")}
+              >
+                Monitor Live Sessions
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+              Refresh Dashboard
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Modals */}
+      {}
       {isPoolModalOpen && (
         <QuestionPoolFormModal
           institutionId={institutionId}
@@ -394,6 +386,38 @@ export function DashboardPage() {
           institutionId={institutionId}
           onClose={() => setIsExamModalOpen(false)}
         />
+      )}
+
+      {isQuestionModalOpen &&
+        institutionId &&
+        poolData?.data &&
+        poolData.data.length > 0 && (
+          <QuestionFormModal
+            institutionId={institutionId}
+            poolId={poolData.data[0].id}
+            onClose={() => setIsQuestionModalOpen(false)}
+          />
+        )}
+      {isQuestionModalOpen && institutionId && poolData?.data?.length === 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="card w-full max-w-sm p-6 animate-in fade-in zoom-in-95">
+            <h2 className="text-xl font-bold text-text-main mb-2">
+              No Question Pools
+            </h2>
+            <p className="text-sm text-text-muted mb-4">
+              Please create a Question Pool before adding questions.
+            </p>
+            <Button
+              onClick={() => {
+                setIsQuestionModalOpen(false);
+                setIsPoolModalOpen(true);
+              }}
+              className="w-full text-center"
+            >
+              + Create Pool First
+            </Button>
+          </div>
+        </div>
       )}
 
       {isMemberModalOpen && institutionId && (

@@ -95,7 +95,7 @@ export class InstitutionService {
       throw new ConflictError("User is already a member of this institution");
     }
 
-    // Validate department IDs if provided
+    
     if (input.departmentIds && input.departmentIds.length > 0) {
       const departments = await prisma.department.findMany({
         where: { id: { in: input.departmentIds }, institutionId },
@@ -184,7 +184,7 @@ export class InstitutionService {
 
     if (!membership) throw new NotFoundError("Membership not found");
 
-    // Validate departments belong to institution
+    
     if (departmentIds.length > 0) {
       const departments = await prisma.department.findMany({
         where: { id: { in: departmentIds }, institutionId },
@@ -196,7 +196,7 @@ export class InstitutionService {
       }
     }
 
-    // Remove existing and recreate
+    
     await prisma.institutionMemberDepartment.deleteMany({
       where: { institutionMemberId: membership.id },
     });

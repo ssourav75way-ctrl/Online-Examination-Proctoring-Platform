@@ -34,6 +34,10 @@ const QuestionListPage = lazy(
 );
 const ExamListPage = lazy(() => import("@/pages/exams/ExamListPage"));
 const ExamDetailPage = lazy(() => import("@/pages/exams/ExamDetailPage"));
+const ExamResultsPage = lazy(() => import("@/pages/exams/ExamResultsPage"));
+const ExaminerResultsDashboard = lazy(
+  () => import("@/pages/exams/ExaminerResultsDashboard"),
+);
 const ProctorQueuePage = lazy(() => import("@/pages/proctor/ProctorQueuePage"));
 const ExamSessionPage = lazy(
   () => import("@/pages/exam-taking/ExamSessionPage"),
@@ -104,6 +108,8 @@ const router = createBrowserRouter([
           { path: "questions/:poolId", element: <QuestionListPage /> },
           { path: "exams", element: <ExamListPage /> },
           { path: "exams/:id", element: <ExamDetailPage /> },
+          { path: "exams/:id/results", element: <ExamResultsPage /> },
+          { path: "results-management", element: <ExaminerResultsDashboard /> },
           { path: "sessions", element: <ProctorQueuePage /> },
           { path: "history", element: <ResultsHistoryPage /> },
           { path: "notifications", element: <NotificationCenterPage /> },

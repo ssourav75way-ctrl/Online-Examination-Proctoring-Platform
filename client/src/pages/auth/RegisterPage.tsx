@@ -25,7 +25,6 @@ const registerApi = apiSlice.injectEndpoints({
 
 const { useRegisterAccountMutation } = registerApi;
 
-// Strict Yup Schema matching the backend registering fields
 const registerSchema = yup.object().shape({
   email: yup
     .string()
@@ -37,10 +36,6 @@ const registerSchema = yup.object().shape({
     .min(6, CONSTANTS.MESSAGES.MIN_LENGTH(6)),
   firstName: yup.string().required(CONSTANTS.MESSAGES.REQUIRED_FIELD),
   lastName: yup.string().required(CONSTANTS.MESSAGES.REQUIRED_FIELD),
-  globalRole: yup
-    .string()
-    .oneOf(Object.values(ROLES))
-    .required(CONSTANTS.MESSAGES.REQUIRED_FIELD),
 });
 
 type RegisterFormData = yup.InferType<typeof registerSchema>;
@@ -57,14 +52,11 @@ export function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: yupResolver(registerSchema),
     mode: "onTouched",
-    defaultValues: {
-      globalRole: ROLES.CANDIDATE as Role,
-    },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerAccount(data).unwrap();
+      await registerAccount({ ...data, globalRole: ROLES.CANDIDATE }).unwrap();
     } catch (err: unknown) {
       console.error("Registration failed", err);
     }
@@ -81,7 +73,6 @@ export function RegisterPage() {
 
   const errorMessage = getErrorMessage();
 
-  // Handle successful registration using early return rendering block
   if (isSuccess) {
     return (
       <div className="card p-8 text-center space-y-4">
@@ -157,39 +148,10 @@ export function RegisterPage() {
           label="Password"
           id="password"
           type="password"
-          placeholder="••••••••"
+          placeholder=""
           error={errors.password?.message}
           {...register("password")}
         />
-
-        <div className="w-full flex flex-col gap-1.5 pt-2">
-          <label
-            htmlFor="globalRole"
-            className="text-sm font-semibold text-slate-700"
-          >
-            Account Type
-            <span className="text-red-500 ml-1">*</span>
-          </label>
-          <select
-            id="globalRole"
-            className={`w-full px-4 py-2.5 border rounded-xl bg-slate-50 text-slate-900 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white ${
-              errors.globalRole
-                ? "border-red-500 focus:ring-red-500"
-                : "border-slate-200"
-            }`}
-            {...register("globalRole")}
-          >
-            <option value={ROLES.CANDIDATE}>Candidate</option>
-            <option value={ROLES.PROCTOR}>Proctor</option>
-            <option value={ROLES.EXAMINER}>Examiner</option>
-            <option value={ROLES.ADMIN}>Institution Admin</option>
-          </select>
-          {errors.globalRole?.message && (
-            <p className="text-sm text-red-600 mt-1 font-medium">
-              {errors.globalRole.message}
-            </p>
-          )}
-        </div>
 
         {errorMessage && (
           <div className="p-4 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium mt-4 flex items-center gap-3">

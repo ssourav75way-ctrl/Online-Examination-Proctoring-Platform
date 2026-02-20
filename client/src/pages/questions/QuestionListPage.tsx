@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/common/Button";
 import { useSelector } from "react-redux";
 import { QuestionFormModal } from "./QuestionFormModal";
+import { VersionHistoryModal } from "./VersionHistoryModal";
 
 const typeBadgeMap: Record<string, { label: string; classes: string }> = {
   MCQ: {
@@ -37,15 +38,22 @@ const difficultyColor = (d: number) => {
   return "bg-red-100 text-red-800";
 };
 
+import { RootState } from "@/store";
+import { Question } from "@/types/exam";
+
 export function QuestionListPage() {
   const { poolId } = useParams<{ poolId: string }>();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+    null,
+  );
   const [topicFilter, setTopicFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
-  const user = useSelector((state: any) => state.auth.user);
+  const user = useSelector((state: RootState) => state.auth.user);
   const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
 
   const { data: poolData } = useGetQuestionPoolByIdQuery(
@@ -65,15 +73,14 @@ export function QuestionListPage() {
     { skip: !poolId || !institutionId },
   );
 
-  const questions = data?.data || [];
+  const questions: Question[] = data?.data || [];
   const totalPages = data?.meta?.totalPages || 1;
   const total = data?.meta?.total || 0;
   const pool = poolData?.data;
 
-  // Extract unique topics for filter
-  const allTopics = [...new Set(questions.map((q: any) => q.topic))].filter(
-    Boolean,
-  );
+  const allTopics = [
+    ...new Set(questions.map((q: Question) => q.topic)),
+  ].filter(Boolean);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -82,7 +89,7 @@ export function QuestionListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -105,7 +112,7 @@ export function QuestionListPage() {
         <Button onClick={() => setIsModalOpen(true)}>+ Add Question</Button>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="flex gap-3 flex-wrap items-center">
         <select
           className="h-9 px-3 rounded-lg bg-white border border-border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -148,7 +155,7 @@ export function QuestionListPage() {
           </Button>
         )}
 
-        {/* Topic chips from current results */}
+        {}
         {!topicFilter && allTopics.length > 0 && (
           <div className="flex gap-1.5 ml-2">
             {allTopics.slice(0, 6).map((t) => (
@@ -167,21 +174,21 @@ export function QuestionListPage() {
         )}
       </div>
 
-      {/* Loading */}
+      {}
       {isLoading && (
         <div className="card p-8 flex justify-center items-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
         </div>
       )}
 
-      {/* Error */}
+      {}
       {isError && (
         <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
           Failed to load questions. Ensure you have access to this pool.
         </div>
       )}
 
-      {/* Questions Table */}
+      {}
       {!isLoading && !isError && (
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden">
           <table className="w-full text-left text-sm">
@@ -252,7 +259,7 @@ export function QuestionListPage() {
                     >
                       <td className="px-6 py-4">
                         <p className="font-medium text-slate-900 line-clamp-2 leading-snug">
-                          {v?.content || "—"}
+                          {v?.content || ""}
                         </p>
                       </td>
                       <td className="px-4 py-4">
@@ -275,7 +282,7 @@ export function QuestionListPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-center font-bold text-slate-700">
-                        {v?.marks || "—"}
+                        {v?.marks || ""}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -283,13 +290,26 @@ export function QuestionListPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          Edit
-                        </Button>
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary-600 h-8 text-[10px]"
+                            onClick={() => {
+                              setSelectedQuestionId(q.id);
+                              setIsHistoryOpen(true);
+                            }}
+                          >
+                            History
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-600 h-8 text-[10px]"
+                          >
+                            Edit
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -298,12 +318,12 @@ export function QuestionListPage() {
             </tbody>
           </table>
 
-          {/* Pagination */}
+          {}
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
             <span className="text-sm font-medium text-slate-500">
               Showing{" "}
               <strong>
-                {questions.length === 0 ? 0 : (page - 1) * 15 + 1}–
+                {questions.length === 0 ? 0 : (page - 1) * 15 + 1}
                 {Math.min(page * 15, total)}
               </strong>{" "}
               of <strong>{total}</strong> questions
@@ -332,12 +352,24 @@ export function QuestionListPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {}
       {isModalOpen && poolId && (
         <QuestionFormModal
           institutionId={institutionId}
           poolId={poolId}
           onClose={handleModalClose}
+        />
+      )}
+
+      {isHistoryOpen && selectedQuestionId && (
+        <VersionHistoryModal
+          institutionId={institutionId}
+          questionId={selectedQuestionId}
+          onClose={() => {
+            setIsHistoryOpen(false);
+            setSelectedQuestionId(null);
+            refetch();
+          }}
         />
       )}
     </div>

@@ -33,7 +33,6 @@ async function main() {
   });
   console.log(`  Created super admin: ${superAdmin.email}`);
 
-  // 2. Create Candidate
   const candidatePassword = await bcrypt.hash("candidate123", 12);
   const candidate = await prisma.user.upsert({
     where: { email: "candidate@platform.com" },
@@ -49,7 +48,6 @@ async function main() {
   });
   console.log(`  Created candidate: ${candidate.email}`);
 
-  // 3. Create Institution
   const institution = await prisma.institution.upsert({
     where: { code: "MIT" },
     update: {},
@@ -61,7 +59,6 @@ async function main() {
   });
   console.log(`  Created institution: ${institution.name}`);
 
-  // 4. Create Departments under the institution
   const csDepartment = await prisma.department.upsert({
     where: {
       institutionId_code: { institutionId: institution.id, code: "CS" },
@@ -88,7 +85,6 @@ async function main() {
   });
   console.log(`  Created department: ${mathDepartment.name}`);
 
-  // 5. Create Institution Members (Examiner and Proctor)
   const examinerPassword = await bcrypt.hash("examiner123", 12);
   const examinerUser = await prisma.user.upsert({
     where: { email: "examiner@platform.com" },
@@ -149,7 +145,6 @@ async function main() {
   });
   console.log(`  Created proctor: ${proctorUser.email}`);
 
-  // 6. Create a Question Pool
   const questionPool = await prisma.questionPool.create({
     data: {
       departmentId: csDepartment.id,
@@ -160,7 +155,6 @@ async function main() {
   });
   console.log(`  Created question pool: ${questionPool.name}`);
 
-  // 7. Create a sample Question with Version
   const question = await prisma.question.create({
     data: {
       poolId: questionPool.id,
@@ -189,7 +183,6 @@ async function main() {
   });
   console.log(`  Created question: ${question.topic}`);
 
-  // 8. Create an Exam
   const now = new Date();
   const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // tomorrow
   const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later

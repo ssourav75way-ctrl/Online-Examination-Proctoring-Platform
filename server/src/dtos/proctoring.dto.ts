@@ -1,6 +1,6 @@
 import { FlagType, ReviewStatus } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface UploadSnapshotRequestDTO {
   sessionId: string;
@@ -15,7 +15,7 @@ export interface ReviewFlagRequestDTO {
   reviewNotes?: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface SnapshotResponseDTO {
   id: string;

@@ -162,34 +162,12 @@ export function InstitutionDetailPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8 flex flex-col h-full">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
-            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-              <svg
-                className="w-5 h-5 text-primary-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
-              Departments
-            </h2>
-            <span className="bg-slate-100 text-slate-600 font-bold px-2.5 py-1.5 rounded-lg text-xs">
-              {departments.length}
-            </span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto pr-2">
-            {departments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center bg-slate-50 border border-slate-100 border-dashed rounded-xl h-full">
+        {!isSuperAdmin && (
+          <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8 flex flex-col h-full">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+              <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
                 <svg
-                  className="w-8 h-8 text-slate-300 mb-2"
+                  className="w-5 h-5 text-primary-500"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -197,45 +175,71 @@ export function InstitutionDetailPage() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                   />
                 </svg>
-                <p className="text-slate-500 font-medium text-sm">
-                  No departments found.
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {departments.map((dept) => (
-                  <li
-                    key={dept.id}
-                    className="group flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:shadow-md transition-all duration-200"
+                Departments
+              </h2>
+              <span className="bg-slate-100 text-slate-600 font-bold px-2.5 py-1.5 rounded-lg text-xs">
+                {departments.length}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2">
+              {departments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-slate-50 border border-slate-100 border-dashed rounded-xl h-full">
+                  <svg
+                    className="w-8 h-8 text-slate-300 mb-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <div>
-                      <span className="font-bold text-slate-900 block group-hover:text-primary-700 transition-colors">
-                        {dept.name}
-                      </span>
-                      <span className="font-mono text-xs font-semibold text-slate-500 mt-0.5 inline-block">
-                        DEP-{dept.code}
-                      </span>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 tracking-wide transition-opacity"
-                      onClick={() =>
-                        navigate(`/dashboard/questions?departmentId=${dept.id}`)
-                      }
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                  <p className="text-slate-500 font-medium text-sm">
+                    No departments found.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {departments.map((dept) => (
+                    <li
+                      key={dept.id}
+                      className="group flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:shadow-md transition-all duration-200"
                     >
-                      View
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                      <div>
+                        <span className="font-bold text-slate-900 block group-hover:text-primary-700 transition-colors">
+                          {dept.name}
+                        </span>
+                        <span className="font-mono text-xs font-semibold text-slate-500 mt-0.5 inline-block">
+                          DEP-{dept.code}
+                        </span>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 tracking-wide transition-opacity"
+                        onClick={() =>
+                          navigate(
+                            `/dashboard/questions?departmentId=${dept.id}`,
+                          )
+                        }
+                      >
+                        View
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {isSuperAdmin && (
           <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8 flex flex-col h-full">

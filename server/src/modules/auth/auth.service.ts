@@ -7,32 +7,13 @@ import {
   UnauthorizedError,
 } from "../../utils/app-error";
 import { GlobalRole } from "@prisma/client";
-import { JwtPayload, TokenPair } from "../../types/auth.types";
-
-interface RegisterInput {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  globalRole?: GlobalRole;
-}
-
-interface LoginInput {
-  email: string;
-  password: string;
-}
-
-interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    globalRole: GlobalRole;
-    institutionMembers: any[];
-  };
-  tokens: TokenPair;
-}
+import {
+  JwtPayload,
+  TokenPair,
+  RegisterInput,
+  LoginInput,
+  AuthResponse,
+} from "../../types/auth.types";
 
 export class AuthService {
   async register(input: RegisterInput): Promise<AuthResponse> {

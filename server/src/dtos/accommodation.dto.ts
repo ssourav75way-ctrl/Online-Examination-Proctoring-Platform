@@ -1,6 +1,6 @@
 import { AccommodationType, AccommodationAction } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface GrantAccommodationRequestDTO {
   candidateId: string;
@@ -19,7 +19,7 @@ export interface RevokeAccommodationRequestDTO {
   reason?: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface AccommodationDTO {
   id: string;

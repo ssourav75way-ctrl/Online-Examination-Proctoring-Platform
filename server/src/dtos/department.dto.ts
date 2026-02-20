@@ -1,4 +1,4 @@
-/* ─── Request DTOs ─── */
+
 
 export interface CreateDepartmentRequestDTO {
   name: string;
@@ -10,7 +10,7 @@ export interface UpdateDepartmentRequestDTO {
   code?: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface DepartmentListItemDTO {
   id: string;

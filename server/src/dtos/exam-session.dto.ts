@@ -1,6 +1,6 @@
 import { ViolationType } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface StartSessionRequestDTO {
   enrollmentId: string;
@@ -21,7 +21,7 @@ export interface ExtendTimeRequestDTO {
   additionalMinutes: number;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface SessionResponseDTO {
   id: string;

@@ -3,12 +3,10 @@ import { NotFoundError, BadRequestError } from "../../utils/app-error";
 import { ResultStatus, ReEvalStatus } from "@prisma/client";
 import { isWithinChallengeWindow } from "../../utils/date.util";
 import { PaginationParams } from "../../utils/pagination.util";
+import { gradingService } from "../grading/grading.service";
 
 export class ResultService {
-  /**
-   * Generate results for all completed enrollments in an exam.
-   * Results stay in PENDING_REVIEW until examiner publishes.
-   */
+  
   async generateResults(examId: string) {
     const enrollments = await prisma.examEnrollment.findMany({
       where: { examId, status: "COMPLETED" },
@@ -28,13 +26,24 @@ export class ResultService {
     for (const enrollment of enrollments) {
       if (!enrollment.session) continue;
 
-      // Check if result already exists
+      
+      await gradingService.autoGradeSession(enrollment.session.id);
+
+      
+      const freshSession = await prisma.examSession.findUnique({
+        where: { id: enrollment.session.id },
+        include: { answers: { select: { finalScore: true } } },
+      });
+
+      if (!freshSession) continue;
+
+      
       const existing = await prisma.examResult.findUnique({
         where: { enrollmentId: enrollment.id },
       });
       if (existing) continue;
 
-      const totalScore = enrollment.session.answers.reduce(
+      const totalScore = freshSession.answers.reduce(
         (sum, a) => sum + (a.finalScore || 0),
         0,
       );
@@ -46,7 +55,7 @@ export class ResultService {
         exam.totalMarks > 0 ? (totalScore / exam.totalMarks) * 100 : 0;
       const passed = totalScore >= exam.passingScore;
 
-      // Calculate integrity metrics
+      
       const proctorFlagCount = enrollment.session.flags.length;
       const proctorFlagSeveritySum = enrollment.session.flags.reduce(
         (s, f) => s + f.severity,
@@ -56,7 +65,7 @@ export class ResultService {
         (v) => v.type === "TAB_SWITCH",
       ).length;
 
-      // Basic integrity score (0-100, higher = more trustworthy)
+      
       const baseIntegrity = 100;
       const flagPenalty = proctorFlagSeveritySum * 5;
       const violationPenalty = timingAnomalyCount * 10;
@@ -84,9 +93,7 @@ export class ResultService {
     return results;
   }
 
-  /**
-   * Publish results — candidates can see scores but NOT correct answers.
-   */
+  
   async publishResults(examId: string) {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundError("Exam not found");
@@ -108,7 +115,7 @@ export class ResultService {
         data: { resultStatus: ResultStatus.PUBLISHED },
       });
 
-      // Notify all candidates
+      
       const enrollments = await tx.examEnrollment.findMany({
         where: { examId },
         select: { candidateId: true },
@@ -129,9 +136,7 @@ export class ResultService {
     });
   }
 
-  /**
-   * Get result for a candidate — shows score but NOT correct answers.
-   */
+  
   async getCandidateResult(enrollmentId: string, candidateId: string) {
     const result = await prisma.examResult.findUnique({
       where: { enrollmentId },
@@ -161,7 +166,7 @@ export class ResultService {
       throw new BadRequestError("Results not yet published");
     }
 
-    // Check if challenge window is open
+    
     const canChallenge = result.publishedAt
       ? isWithinChallengeWindow(
           result.publishedAt,
@@ -172,13 +177,11 @@ export class ResultService {
     return {
       ...result,
       canChallenge,
-      // Do NOT include correct answers — by design
+      
     };
   }
 
-  /**
-   * Get all published results for a candidate.
-   */
+  
   async getMyResults(candidateId: string) {
     const results = await prisma.examResult.findMany({
       where: {
@@ -205,9 +208,7 @@ export class ResultService {
     return results;
   }
 
-  /**
-   * File a re-evaluation request for a specific question.
-   */
+  
   async fileReEvaluation(
     resultId: string,
     candidateAnswerId: string,
@@ -253,9 +254,7 @@ export class ResultService {
     });
   }
 
-  /**
-   * Process a re-evaluation request.
-   */
+  
   async processReEvaluation(
     requestId: string,
     reviewedById: string,
@@ -280,13 +279,13 @@ export class ResultService {
     if (status === ReEvalStatus.APPROVED && newScore !== undefined) {
       updateData.newScore = newScore;
 
-      // Update the answer's score
+      
       await prisma.candidateAnswer.update({
         where: { id: request.candidateAnswerId },
         data: { manualScore: newScore, finalScore: newScore },
       });
 
-      // Recalculate result total
+      
       const allAnswers = await prisma.candidateAnswer.findMany({
         where: { sessionId: request.candidateAnswer.sessionId },
       });
@@ -308,7 +307,7 @@ export class ResultService {
       });
     }
 
-    // Notify candidate
+    
     const enrollment = await prisma.examEnrollment.findFirst({
       where: { id: request.result.enrollmentId },
     });
@@ -330,9 +329,7 @@ export class ResultService {
     });
   }
 
-  /**
-   * Get all results for an exam.
-   */
+  
   async getExamResults(examId: string, pagination: PaginationParams) {
     const [results, total] = await Promise.all([
       prisma.examResult.findMany({
@@ -361,9 +358,7 @@ export class ResultService {
     return { results, total };
   }
 
-  /**
-   * Get re-evaluation requests for an exam.
-   */
+  
   async getReEvaluationRequests(examId: string, pagination: PaginationParams) {
     const [requests, total] = await Promise.all([
       prisma.reEvaluationRequest.findMany({

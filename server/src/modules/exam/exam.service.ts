@@ -4,7 +4,11 @@ import {
   ConflictError,
   BadRequestError,
 } from "../../utils/app-error";
-import { ExamStatus, AccommodationType } from "@prisma/client";
+import {
+  ExamStatus,
+  AccommodationType,
+  NotificationType,
+} from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 import {
   doTimeRangesOverlap,
@@ -12,35 +16,12 @@ import {
   hasCooldownPassed,
 } from "../../utils/date.util";
 
-interface CreateExamInput {
-  institutionId: string;
-  title: string;
-  description?: string;
-  scheduledStartTime: string;
-  scheduledEndTime: string;
-  durationMinutes: number;
-  isAdaptive?: boolean;
-  maxAttempts?: number;
-  cooldownHours?: number;
-  challengeWindowDays?: number;
-  totalMarks: number;
-  passingScore: number;
-  questionSelections: {
-    poolId: string;
-    questionIds: string[];
-    quota?: number;
-  }[];
-}
-
-interface EnrollCandidateInput {
-  candidateId: string;
-  accommodationType?: AccommodationType;
-}
+import {
+  CreateExamInput,
+  EnrollCandidateInput,
+} from "../../types/modules/exam.types";
 
 export class ExamService {
-  /**
-   * Create exam and pin question versions at creation time.
-   */
   async create(input: CreateExamInput, createdById: string) {
     const startTime = new Date(input.scheduledStartTime);
     const endTime = new Date(input.scheduledEndTime);
@@ -49,7 +30,6 @@ export class ExamService {
       throw new BadRequestError("Start time must be before end time");
     }
 
-    // Validate all question pools and fetch current versions
     const examQuestions: {
       questionId: string;
       questionVersionId: string;
@@ -83,7 +63,7 @@ export class ExamService {
 
         examQuestions.push({
           questionId,
-          questionVersionId: question.versions[0].id, // Pin current version
+          questionVersionId: question.versions[0].id,
           poolId: selection.poolId,
           poolQuota: selection.quota || null,
           orderIndex: orderIdx++,
@@ -132,9 +112,6 @@ export class ExamService {
     return exam;
   }
 
-  /**
-   * Schedule exam — changes status to SCHEDULED.
-   */
   async schedule(examId: string) {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundError("Exam not found");
@@ -147,9 +124,6 @@ export class ExamService {
     });
   }
 
-  /**
-   * Enroll a candidate with conflict detection and accommodation support.
-   */
   async enrollCandidate(examId: string, input: EnrollCandidateInput) {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundError("Exam not found");
@@ -161,7 +135,6 @@ export class ExamService {
     if (candidate.globalRole !== "CANDIDATE")
       throw new BadRequestError("User is not a candidate");
 
-    // Check for overlapping exams across ALL institutions
     const existingEnrollments = await prisma.examEnrollment.findMany({
       where: {
         candidateId: input.candidateId,
@@ -185,7 +158,6 @@ export class ExamService {
       }
     }
 
-    // Check attempt limits and cooldown
     const previousAttempts = await prisma.examEnrollment.findMany({
       where: { examId, candidateId: input.candidateId },
       orderBy: { enrolledAt: "desc" },
@@ -197,7 +169,6 @@ export class ExamService {
       );
     }
 
-    // Check cooldown period
     if (previousAttempts.length > 0 && exam.cooldownHours > 0) {
       const lastAttempt = previousAttempts[0];
       if (lastAttempt.status === "COMPLETED") {
@@ -215,7 +186,6 @@ export class ExamService {
       }
     }
 
-    // Get accommodation if applicable
     let accommodationType = input.accommodationType || AccommodationType.NONE;
     if (accommodationType === AccommodationType.NONE) {
       const accommodation = await prisma.accommodation.findFirst({
@@ -253,13 +223,13 @@ export class ExamService {
     });
   }
 
-  /**
-   * Reschedule exam with auto-conflict detection and notification.
-   */
   async reschedule(examId: string, newStartTime: string, newEndTime: string) {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
-      include: { enrollments: { include: { candidate: true } } },
+      include: {
+        enrollments: { include: { candidate: true } },
+        institution: { select: { name: true } },
+      },
     });
 
     if (!exam) throw new NotFoundError("Exam not found");
@@ -275,7 +245,6 @@ export class ExamService {
     const start = new Date(newStartTime);
     const end = new Date(newEndTime);
 
-    // Check conflicts for all enrolled candidates with other institutions' exams
     const conflicts: {
       candidateId: string;
       candidateName: string;
@@ -314,70 +283,125 @@ export class ExamService {
       }
     }
 
-    // Update exam schedule
     const updatedExam = await prisma.exam.update({
       where: { id: examId },
       data: { scheduledStartTime: start, scheduledEndTime: end },
     });
 
-    // Create notifications for conflicts
     if (conflicts.length > 0) {
-      const notifications = conflicts.map((conflict) => ({
-        recipientId: conflict.candidateId,
-        type: "EXAM_RESCHEDULE" as const,
-        title: "Exam Schedule Conflict",
-        message: `Exam "${exam.title}" has been rescheduled and now conflicts with "${conflict.conflictingExamTitle}" at ${conflict.conflictingInstitution}`,
-        metadata: {
-          ...JSON.parse(JSON.stringify(conflict)),
-          examId,
-          examTitle: exam.title,
-        },
-      }));
+      interface NotificationData {
+        recipientId: string;
+        type: NotificationType;
+        title: string;
+        message: string;
+        metadata: Record<string, any>;
+      }
 
-      await prisma.notification.createMany({ data: notifications });
+      const candidateNotifications: NotificationData[] = conflicts.map(
+        (conflict) => ({
+          recipientId: conflict.candidateId,
+          type: NotificationType.EXAM_RESCHEDULE,
+          title: "Exam Schedule Conflict",
+          message: `Your exam "${exam.title}" now conflicts with "${conflict.conflictingExamTitle}" at ${conflict.conflictingInstitution}.`,
+          metadata: { examId, examTitle: exam.title },
+        }),
+      );
+
+      const currentInstAdmins = await prisma.institutionMember.findMany({
+        where: { institutionId: exam.institutionId, role: "ADMIN" },
+        select: { userId: true },
+      });
+
+      const conflictingInstNames = [
+        ...new Set(conflicts.map((c) => c.conflictingInstitution)),
+      ];
+      const conflictingInsts = await prisma.institution.findMany({
+        where: { name: { in: conflictingInstNames } },
+        include: {
+          members: { where: { role: "ADMIN" }, select: { userId: true } },
+        },
+      });
+      const adminNotifications: NotificationData[] = [];
+
+      currentInstAdmins.forEach((admin) => {
+        adminNotifications.push({
+          recipientId: admin.userId,
+          type: NotificationType.EXAM_CONFLICT,
+          title: "Schedule Conflict Detected",
+          message: `Rescheduling "${exam.title}" caused conflicts for ${conflicts.length} candidates with other institutions.`,
+          metadata: { examId, conflictsCount: conflicts.length },
+        });
+      });
+
+      conflictingInsts.forEach((inst) => {
+        const impactedCandidates = conflicts.filter(
+          (c) => c.conflictingInstitution === inst.name,
+        );
+        inst.members.forEach((member) => {
+          adminNotifications.push({
+            recipientId: member.userId,
+            type: NotificationType.EXAM_CONFLICT,
+            title: "Remote Exam Conflict",
+            message: `External institution "${exam.institution.name}" rescheduled an exam that now conflicts with your students' schedule.`,
+            metadata: {
+              impactedCandidates: impactedCandidates.map(
+                (c) => c.candidateName,
+              ),
+            },
+          });
+        });
+      });
+
+      await prisma.notification.createMany({
+        data: [...candidateNotifications, ...adminNotifications],
+      });
     }
 
     return { exam: updatedExam, conflicts };
   }
 
-  /**
-   * Get questions for a retake with zero overlap from previous attempts.
-   */
   async getRetakeQuestionSet(
     examId: string,
     candidateId: string,
   ): Promise<string[]> {
-    // Find previous attempts and their questions
-    const previousEnrollments = await prisma.examEnrollment.findMany({
-      where: { examId, candidateId, status: "COMPLETED" },
+    const previousSessions = await prisma.examSession.findMany({
+      where: { enrollment: { examId, candidateId } },
       include: {
-        session: {
-          include: {
-            answers: { select: { examQuestionId: true } },
-          },
+        answers: { select: { examQuestion: { select: { questionId: true } } } },
+      },
+    });
+
+    const forbiddenQuestionIds = new Set<string>();
+    previousSessions.forEach((session) => {
+      session.answers.forEach((ans) => {
+        if (ans.examQuestion?.questionId) {
+          forbiddenQuestionIds.add(ans.examQuestion.questionId);
+        }
+      });
+    });
+
+    const activeEnrollment = await prisma.examEnrollment.findFirst({
+      where: {
+        examId,
+        candidateId,
+        status: { in: ["ENROLLED", "IN_PROGRESS"] },
+      },
+      include: {
+        attemptQuestions: {
+          include: { examQuestion: { select: { questionId: true } } },
         },
       },
     });
 
-    const previousQuestionIds = new Set<string>();
-    for (const enrollment of previousEnrollments) {
-      if (enrollment.session) {
-        for (const answer of enrollment.session.answers) {
-          // Get the actual questionId from the examQuestion
-          const examQuestion = await prisma.examQuestion.findUnique({
-            where: { id: answer.examQuestionId },
-          });
-          if (examQuestion) {
-            previousQuestionIds.add(examQuestion.questionId);
-          }
-        }
-      }
+    if (activeEnrollment) {
+      activeEnrollment.attemptQuestions.forEach((aq) => {
+        forbiddenQuestionIds.add(aq.examQuestion.questionId);
+      });
     }
 
-    // Get all questions in the exam's pools that were NOT used before
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
-      include: { questions: true },
+      include: { questions: { select: { poolId: true } } },
     });
 
     if (!exam) throw new NotFoundError("Exam not found");
@@ -388,7 +412,7 @@ export class ExamService {
       where: {
         poolId: { in: poolIds },
         isActive: true,
-        id: { notIn: [...previousQuestionIds] },
+        id: { notIn: Array.from(forbiddenQuestionIds) },
       },
       select: { id: true },
     });
@@ -576,7 +600,6 @@ export class ExamService {
       );
     }
 
-    // Get existing max orderIndex
     const maxOrder = exam.questions.reduce(
       (max, q) => Math.max(max, q.orderIndex),
       -1,
@@ -602,7 +625,6 @@ export class ExamService {
       if (!question.versions[0])
         throw new BadRequestError(`Question ${questionIds[i]} has no versions`);
 
-      // Skip duplicates
       const alreadyAdded = exam.questions.some(
         (eq) => eq.questionId === questionIds[i],
       );

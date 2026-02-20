@@ -6,9 +6,7 @@ import { codeExecutorService } from "../../services/code-executor.service";
 import { GradingResult, McqOption, KeywordConfig } from "../../types";
 
 export class GradingService {
-  /**
-   * Auto-grade all answers for a session.
-   */
+  
   async autoGradeSession(sessionId: string) {
     const answers = await prisma.candidateAnswer.findMany({
       where: { sessionId, isGraded: false },
@@ -68,9 +66,7 @@ export class GradingService {
     return results;
   }
 
-  /**
-   * Grade a single answer based on question type.
-   */
+  
   async gradeAnswer(
     type: QuestionType,
     answerContent: string | null,
@@ -120,9 +116,7 @@ export class GradingService {
     }
   }
 
-  /**
-   * MCQ grading — binary (correct or not).
-   */
+  
   private gradeMcq(
     answerContent: string | null,
     options: McqOption[] | null,
@@ -148,11 +142,7 @@ export class GradingService {
     };
   }
 
-  /**
-   * Multi-select grading with penalty formula.
-   * score = max(0, (correct_selected - wrong_selected) / total_correct) × marks
-   * Prevents gaming by selecting all options.
-   */
+  
   private gradeMultiSelect(
     answerContent: string | null,
     options: McqOption[] | null,
@@ -204,7 +194,7 @@ export class GradingService {
       }
     }
 
-    // Penalty formula: max(0, (correct - wrong) / totalCorrect) × marks
+    
     const rawScore = Math.max(
       0,
       (correctSelected - wrongSelected) / totalCorrect,
@@ -219,9 +209,7 @@ export class GradingService {
     };
   }
 
-  /**
-   * Fill-in-blank — exact match (case insensitive).
-   */
+  
   private gradeFillBlank(
     answerContent: string | null,
     correctAnswer: string | null,
@@ -247,9 +235,7 @@ export class GradingService {
     };
   }
 
-  /**
-   * Short answer — keyword matching with similarity threshold.
-   */
+  
   private gradeShortAnswer(
     answerContent: string | null,
     keywords: KeywordConfig[] | null,
@@ -281,9 +267,7 @@ export class GradingService {
     };
   }
 
-  /**
-   * Code grading — per test case, partial credit = (passed/total) × marks.
-   */
+  
   private async gradeCode(
     codeSubmission: string | null,
     language: string,
@@ -331,9 +315,7 @@ export class GradingService {
     };
   }
 
-  /**
-   * Examiner override — manually set score for any answer.
-   */
+  
   async overrideScore(
     answerId: string,
     manualScore: number,

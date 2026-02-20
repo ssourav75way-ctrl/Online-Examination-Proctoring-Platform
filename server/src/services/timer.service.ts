@@ -18,7 +18,7 @@ export class TimerService {
     let remainingSeconds: number;
 
     if (isPaused) {
-      // If currently paused, calculate remaining from when it was paused
+      
       remainingSeconds = calculateRemainingSeconds(
         serverDeadline,
         totalPausedSeconds,

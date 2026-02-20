@@ -47,5 +47,12 @@ router.patch(
   requireInstitutionRole("ADMIN", "EXAMINER"),
   (req, res, next) => questionController.deactivate(req, res, next),
 );
+router.post(
+  "/:institutionId/questions/:id/rollback/:versionId",
+  authenticate,
+  institutionScope,
+  requireInstitutionRole("ADMIN", "EXAMINER"),
+  (req, res, next) => questionController.rollback(req, res, next),
+);
 
 export default router;

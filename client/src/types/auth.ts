@@ -1,4 +1,3 @@
-/** Base response interface guaranteeing typed API responses */
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -11,7 +10,6 @@ export interface ApiResponse<T> {
   };
 }
 
-/** Utility Types */
 export type Role =
   | "SUPER_ADMIN"
   | "ADMIN"
@@ -19,14 +17,12 @@ export type Role =
   | "PROCTOR"
   | "CANDIDATE";
 
-// Application State Base Error
 export interface AppError {
   status: number;
   message: string;
   errors?: Record<string, string[]>;
 }
 
-// User Entity
 export interface InstitutionMembership {
   role: "ADMIN" | "EXAMINER" | "PROCTOR";
   institution: { id: string; name: string; code: string };
@@ -40,6 +36,8 @@ export interface User {
   lastName: string;
   globalRole: Role;
   isActive: boolean;
+  highContrastMode: boolean;
+  screenReaderEnabled: boolean;
   needsPasswordReset: boolean;
   accessibilityPreferences: AccessibilityPreferences | null;
   institutionMembers?: InstitutionMembership[];
@@ -51,7 +49,6 @@ export interface AccessibilityPreferences {
   fontSize: "NORMAL" | "LARGE" | "EXTRA_LARGE";
 }
 
-// Token Payloads
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

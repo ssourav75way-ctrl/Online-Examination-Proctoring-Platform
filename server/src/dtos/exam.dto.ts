@@ -5,7 +5,7 @@ import {
   ResultStatus,
 } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface CreateExamRequestDTO {
   institutionId: string;
@@ -39,7 +39,7 @@ export interface RescheduleExamRequestDTO {
   newEndTime: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface ExamListItemDTO {
   id: string;

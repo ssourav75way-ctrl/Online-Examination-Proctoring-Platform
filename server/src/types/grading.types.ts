@@ -29,8 +29,8 @@ export interface IntegrityScoreFactors {
 
 export interface QuestionAnalytics {
   questionId: string;
-  difficultyIndex: number; // % who got it right
-  discriminationIndex: number; // Correlation top vs bottom 27%
+  difficultyIndex: number; 
+  discriminationIndex: number; 
   distractorAnalysis: DistractorInfo[];
   flaggedForReview: boolean;
   flagReason: string | null;

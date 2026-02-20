@@ -14,6 +14,7 @@ export default function UserManagementPage() {
     "EXAMINER" | "PROCTOR" | "CANDIDATE" | undefined
   >();
   const user = useSelector((state: RootState) => state.auth.user);
+  const isSuperAdmin = user?.globalRole === "SUPER_ADMIN";
   const institutionId = user?.institutionMembers?.[0]?.institution.id;
 
   const {
@@ -108,9 +109,11 @@ export default function UserManagementPage() {
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-text-muted">
                   Role
                 </th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-text-muted">
-                  Departments
-                </th>
+                {!isSuperAdmin && (
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-text-muted">
+                    Departments
+                  </th>
+                )}
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-text-muted">
                   Joined
                 </th>
@@ -143,24 +146,26 @@ export default function UserManagementPage() {
                         {member.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {member.departmentAccess.length > 0 ? (
-                          member.departmentAccess.map((da) => (
-                            <span
-                              key={da.department.id}
-                              className="text-[11px] bg-background px-1.5 py-0.5 rounded border border-border text-text-muted"
-                            >
-                              {da.department.name}
+                    {!isSuperAdmin && (
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {member.departmentAccess.length > 0 ? (
+                            member.departmentAccess.map((da) => (
+                              <span
+                                key={da.department.id}
+                                className="text-[11px] bg-background px-1.5 py-0.5 rounded border border-border text-text-muted"
+                              >
+                                {da.department.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-text-muted italic">
+                              All Departments / None
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-text-muted italic">
-                            All Departments / None
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-sm text-text-muted">
                       {new Date(member.createdAt).toLocaleDateString()}
                     </td>
@@ -194,7 +199,7 @@ export default function UserManagementPage() {
       {isModalOpen && (
         <MemberAddModal
           institutionId={institutionId || ""}
-          defaultRole={selectedRole as any}
+          defaultRole={selectedRole}
           onClose={() => {
             setIsModalOpen(false);
             refetch();

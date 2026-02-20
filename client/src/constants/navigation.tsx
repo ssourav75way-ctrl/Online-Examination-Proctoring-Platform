@@ -1,4 +1,4 @@
-// Icon placeholders to satisfy strict SVG rules
+
 const Icons = {
   Home: () => (
     <span className="bg-primary-100 text-primary-600 px-2 py-0.5 rounded text-xs font-bold font-mono border border-primary-200 shadow-sm mr-3">
@@ -38,7 +38,7 @@ type RoleMapItem = {
   icon: () => JSX.Element;
 };
 
-// Pure object map dictionary banning switch/nested-ifs for navigation rendering
+
 export const ROLE_NAVIGATION_MAP: Record<string, RoleMapItem[]> = {
   SUPER_ADMIN: [
     { path: "/dashboard", label: "Overview", icon: Icons.Home },
@@ -77,6 +77,11 @@ export const ROLE_NAVIGATION_MAP: Record<string, RoleMapItem[]> = {
       path: "/dashboard/exams",
       label: "Exam Management",
       icon: Icons.FileText,
+    },
+    {
+      path: "/dashboard/results-management",
+      label: "Results & Publishing",
+      icon: Icons.ShieldAlert,
     },
   ],
   PROCTOR: [

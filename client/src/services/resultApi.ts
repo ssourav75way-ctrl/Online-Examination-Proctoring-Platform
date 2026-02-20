@@ -40,7 +40,7 @@ interface ReEvaluationRequest {
 
 export const resultApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Examiner: generate results for an exam
+    
     generateResults: builder.mutation<
       { data: ExamResult[] },
       { examId: string }
@@ -52,7 +52,7 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    // Examiner: publish results
+    
     publishResults: builder.mutation<{ data: null }, { examId: string }>({
       query: ({ examId }) => ({
         url: `/results/exams/${examId}/publish`,
@@ -61,7 +61,7 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    // Examiner: get all results for an exam
+    
     getExamResults: builder.query<
       {
         data: ExamResult[];
@@ -81,7 +81,7 @@ export const resultApi = apiSlice.injectEndpoints({
       providesTags: ["Result"],
     }),
 
-    // Candidate: get own result
+    
     getCandidateResult: builder.query<
       { data: ExamResult },
       { enrollmentId: string }
@@ -90,13 +90,13 @@ export const resultApi = apiSlice.injectEndpoints({
       providesTags: ["Result"],
     }),
 
-    // Candidate: get all own results
+    
     getMyResults: builder.query<{ data: ExamResult[] }, void>({
       query: () => "/results/my-results",
       providesTags: ["Result"],
     }),
 
-    // Candidate: file re-evaluation
+    
     fileReEvaluation: builder.mutation<
       { data: ReEvaluationRequest },
       { resultId: string; candidateAnswerId: string; justification: string }
@@ -109,7 +109,7 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    // Examiner: get re-evaluation requests for an exam
+    
     getReEvaluationRequests: builder.query<
       {
         data: ReEvaluationRequest[];
@@ -129,7 +129,7 @@ export const resultApi = apiSlice.injectEndpoints({
       providesTags: ["Result"],
     }),
 
-    // Examiner: process re-evaluation
+    
     processReEvaluation: builder.mutation<
       { data: ReEvaluationRequest },
       {

@@ -1,4 +1,4 @@
-/** Question Formats supported by the system */
+
 export type QuestionType =
   | "MCQ"
   | "MULTI_SELECT"

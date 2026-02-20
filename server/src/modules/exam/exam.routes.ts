@@ -76,7 +76,7 @@ router.put(
   (req, res, next) => examController.update(req, res, next),
 );
 
-// Candidate: get my enrollment for a specific exam
+
 router.get(
   "/:institutionId/exams/:id/my-enrollment",
   authenticate,
@@ -84,7 +84,7 @@ router.get(
   (req, res, next) => examController.getMyEnrollment(req, res, next),
 );
 
-// Exam question management
+
 router.get(
   "/:institutionId/exams/:id/questions",
   authenticate,

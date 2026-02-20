@@ -5,11 +5,10 @@ import { logout } from "@/store/slices/authSlice";
 import { CONSTANTS } from "@/constants";
 import { ROLE_NAVIGATION_MAP } from "@/constants/navigation";
 import { useGetUnreadCountQuery } from "@/services/notificationApi";
+import { useUpdateProfileMutation } from "@/services/userApi";
+import { useEffect } from "react";
+import { NotificationIcon } from "@/components/common/Icons";
 
-/**
- * Main Application Layout for authenticated users.
- * Implements clean sidebar and top navigation.
- */
 export default function AppLayout() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -17,6 +16,8 @@ export default function AppLayout() {
   const effectiveRole = useSelector(
     (state: RootState) => state.auth.effectiveRole,
   );
+
+  const [updateProfile] = useUpdateProfileMutation();
 
   const handleLogout = () => {
     localStorage.removeItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN);
@@ -37,7 +38,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
+      {}
       <aside className="w-64 border-r border-border bg-surface shadow-soft z-10 hidden md:flex md:flex-col">
         <div className="flex h-16 items-center px-6 border-b border-border bg-primary-700">
           <span className="font-bold text-lg text-white tracking-wide">
@@ -68,9 +69,9 @@ export default function AppLayout() {
         </nav>
       </aside>
 
-      {/* Main Content Area */}
+      {}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
+        {}
         <header className="h-16 border-b border-border bg-surface/80 backdrop-blur-md flex items-center justify-between px-8 shadow-sm">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-text-main capitalize">
@@ -98,27 +99,15 @@ export default function AppLayout() {
                 {user?.email}
               </span>
             </div>
-            <div className="h-8 w-px bg-border"></div>
+
             <button
               type="button"
               onClick={() => navigate("/dashboard/notifications")}
               className="relative inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-surface hover:bg-primary-50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
-              <svg
-                className="w-4 h-4 text-text-muted"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
+              <NotificationIcon className="w-4 h-4 text-text-muted" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 min-w-[1.25rem] h-4 rounded-full bg-primary-600 text-[0.65rem] font-bold text-white shadow-sm">
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 min-w-5 h-4 rounded-full bg-primary-600 text-[0.65rem] font-bold text-white shadow-sm">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -133,7 +122,7 @@ export default function AppLayout() {
           </div>
         </header>
 
-        {/* Scrollable Page Content */}
+        {}
         <div className="flex-1 overflow-auto p-8">
           <Outlet />
         </div>

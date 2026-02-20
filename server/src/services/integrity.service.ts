@@ -5,36 +5,28 @@ import {
   IntegrityScoreFactors,
 } from "../types/grading.types";
 
-/**
- * Integrity scoring engine — generates per-candidate integrity scores.
- */
+
 export class IntegrityService {
-  /**
-   * Calculate integrity score for a candidate session.
-   * Based on: proctoring flags, timing anomalies, tab switches, collusion score.
-   */
+  
   calculateIntegrityScore(factors: IntegrityScoreFactors): number {
     let score = 100;
 
-    // Deduct for proctor flags (severity-weighted)
+    
     score -= factors.proctorFlagSeveritySum * 5;
 
-    // Deduct for timing anomalies
+    
     score -= factors.timingAnomalyCount * 8;
 
-    // Deduct for tab switches
+    
     score -= factors.tabSwitchCount * 6;
 
-    // Deduct for collusion
+    
     score -= factors.collusionScore * 30;
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
-  /**
-   * Detect timing anomalies: questions answered suspiciously fast.
-   * Hard questions (difficulty >= 7) answered in < 5 seconds.
-   */
+  
   async detectTimingAnomalies(sessionId: string): Promise<number> {
     const answers = await prisma.candidateAnswer.findMany({
       where: { sessionId },
@@ -50,7 +42,7 @@ export class IntegrityService {
       const difficulty = answer.examQuestion.questionVersion.difficulty;
       if (difficulty >= 7 && answer.timeTakenSeconds < 5) {
         anomalyCount++;
-        // Create a proctor flag for this anomaly
+        
         await prisma.proctorFlag.create({
           data: {
             sessionId,
@@ -65,9 +57,7 @@ export class IntegrityService {
     return anomalyCount;
   }
 
-  /**
-   * Generate full integrity report for an exam.
-   */
+  
   async generateExamIntegrityReport(
     examId: string,
   ): Promise<CandidateIntegrityReport[]> {
@@ -94,7 +84,7 @@ export class IntegrityService {
       },
     });
 
-    // Calculate collusion scores between all candidate pairs
+    
     const collusionScores = await this.detectCollusion(examId, enrollments);
 
     const reports: CandidateIntegrityReport[] = [];
@@ -117,7 +107,7 @@ export class IntegrityService {
 
       const integrityScore = this.calculateIntegrityScore(factors);
 
-      // Update result with integrity score
+      
       if (enrollment.result) {
         await prisma.examResult.update({
           where: { id: enrollment.result.id },
@@ -141,15 +131,13 @@ export class IntegrityService {
       });
     }
 
-    // Sort by integrity score ascending (lowest integrity first)
+    
     reports.sort((a, b) => a.integrityScore - b.integrityScore);
 
     return reports;
   }
 
-  /**
-   * Detect collusion between candidates using answer pattern similarity.
-   */
+  
   private async detectCollusion(
     examId: string,
     enrollments: Array<{
@@ -194,7 +182,7 @@ export class IntegrityService {
           answers2,
         );
 
-        // Update max collusion score for each candidate
+        
         const existing1 = candidateScores.get(candidateIds[i]) || 0;
         const existing2 = candidateScores.get(candidateIds[j]) || 0;
         candidateScores.set(candidateIds[i], Math.max(existing1, similarity));

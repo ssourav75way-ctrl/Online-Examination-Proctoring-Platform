@@ -12,10 +12,7 @@ interface CreateAccommodationInput {
 }
 
 export class AccommodationService {
-  /**
-   * Grant an accommodation (1.5x, 2x time) — logged for audit.
-   * Applied per candidate without revealing to others.
-   */
+  
   async grant(input: CreateAccommodationInput, approvedById: string) {
     const candidate = await prisma.user.findUnique({
       where: { id: input.candidateId },
@@ -35,7 +32,7 @@ export class AccommodationService {
       },
     });
 
-    // Audit log
+    
     await prisma.accommodationAudit.create({
       data: {
         accommodationId: accommodation.id,

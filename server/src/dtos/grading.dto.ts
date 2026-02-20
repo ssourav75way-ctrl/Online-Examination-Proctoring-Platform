@@ -1,11 +1,11 @@
-/* ─── Request DTOs ─── */
+
 
 export interface OverrideScoreRequestDTO {
   answerId: string;
   manualScore: number;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface GradingResultDTO {
   answerId: string;

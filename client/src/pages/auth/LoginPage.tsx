@@ -122,7 +122,7 @@ export function LoginPage() {
           label="Password"
           id="password"
           type="password"
-          placeholder="••••••••"
+          placeholder=""
           error={errors.password?.message}
           {...register("password")}
         />

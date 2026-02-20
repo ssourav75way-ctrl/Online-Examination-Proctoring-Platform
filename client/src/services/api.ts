@@ -1,10 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./baseQuery";
 
-/**
- * The central RTK Query API slice.
- * We inject endpoints in separate files for code splitting.
- */
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
@@ -22,6 +18,8 @@ export const apiSlice = createApi({
     "Notification",
     "Accommodation",
     "Analytics",
+    "ExamMarkers",
+    "Auth",
   ],
   endpoints: () => ({}),
 });

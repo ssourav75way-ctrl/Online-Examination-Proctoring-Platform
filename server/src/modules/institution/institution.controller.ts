@@ -108,13 +108,14 @@ export class InstitutionController {
       const userId = req.params.userId as string;
       const isSuperAdmin = req.user?.globalRole === "SUPER_ADMIN";
 
-      // Fetch the member to check their role before deletion
       const { members } = await institutionService.getMembers(institutionId, {
         page: 1,
         limit: 100,
         skip: 0,
       });
-      const targetMember = members.find((m: any) => m.user.id === userId);
+      const targetMember = members.find(
+        (m: { user: { id: string }; role: string }) => m.user.id === userId,
+      );
 
       if (!targetMember) throw new NotFoundError("Member not found");
 

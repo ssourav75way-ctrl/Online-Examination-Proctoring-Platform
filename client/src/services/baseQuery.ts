@@ -24,21 +24,18 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-/**
- * Custom base query with built-in token refresh mutex rotation.
- * Follows strict error isolation and intercepts 401 Unauthorized responses.
- */
+
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  // Wait until the mutex is available without locking it
+  
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    // Checking whether the mutex is locked
+    
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
@@ -46,7 +43,7 @@ export const baseQueryWithReauth: BaseQueryFn<
           CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN,
         );
         if (refreshToken) {
-          // Attempt to refresh token
+          
           const refreshResult = await baseQuery(
             {
               url: "/auth/refresh",
@@ -58,18 +55,18 @@ export const baseQueryWithReauth: BaseQueryFn<
           );
 
           if (refreshResult.data) {
-            // Add robust typing explicitly for the response
+            
             const data = refreshResult.data as {
               data: { accessToken: string; refreshToken: string };
             };
 
-            // Store new refresh token
+            
             localStorage.setItem(
               CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN,
               data.data.refreshToken,
             );
 
-            // Let Redux know we got a new access token without wiping user data
+            
             const currentUser = (api.getState() as RootState).auth.user;
             if (currentUser) {
               api.dispatch(
@@ -80,7 +77,7 @@ export const baseQueryWithReauth: BaseQueryFn<
               );
             }
 
-            // Retry the initial query
+            
             result = await baseQuery(args, api, extraOptions);
           } else {
             api.dispatch(logout());
@@ -93,7 +90,7 @@ export const baseQueryWithReauth: BaseQueryFn<
         release();
       }
     } else {
-      // Wait until the mutex is available without locking it
+      
       await mutex.waitForUnlock();
       result = await baseQuery(args, api, extraOptions);
     }

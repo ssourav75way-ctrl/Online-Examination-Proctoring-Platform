@@ -13,10 +13,7 @@ interface TestCaseInput {
   timeoutMs: number;
 }
 
-/**
- * Sandboxed code execution service.
- * Runs candidate code against test cases in isolated child processes.
- */
+
 export class CodeExecutorService {
   private readonly tempDir: string;
 
@@ -37,14 +34,14 @@ export class CodeExecutorService {
     let compilationError: string | null = null;
 
     try {
-      // Write code to temp file
+      
       const { filePath, command } = this.prepareExecution(
         execId,
         code,
         language,
       );
 
-      // Compile check for compiled languages
+      
       const compileResult = this.compileCode(filePath, language, execId);
       if (compileResult) {
         compilationError = compileResult;
@@ -58,7 +55,7 @@ export class CodeExecutorService {
         };
       }
 
-      // Run against each test case
+      
       for (const testCase of testCases) {
         const result = this.runTestCase(command, testCase, language);
         testResults.push(result);
@@ -75,14 +72,12 @@ export class CodeExecutorService {
         totalTests: testResults.length,
       };
     } finally {
-      // Cleanup temp files
+      
       this.cleanup(execId);
     }
   }
 
-  /**
-   * Get results filtered for candidate view (hide hidden test cases).
-   */
+  
   getVisibleResults(results: CodeExecutionResult): CodeExecutionResult {
     return {
       ...results,
@@ -155,15 +150,62 @@ export class CodeExecutorService {
   private runTestCase(
     command: string,
     testCase: TestCaseInput,
-    _language: string,
+    language: string,
   ): TestCaseResult {
     const startTime = Date.now();
+
+    
+    const dangerousPatterns: Record<string, string[]> = {
+      javascript: [
+        "fs.",
+        "child_process",
+        "process.exit",
+        "process.env",
+        "eval(",
+        "Function(",
+        "require(",
+      ],
+      typescript: [
+        "fs.",
+        "child_process",
+        "process.exit",
+        "process.env",
+        "eval(",
+        "Function(",
+        "require(",
+      ],
+      python: [
+        "os.",
+        "sys.",
+        "subprocess",
+        "open(",
+        "eval(",
+        "exec(",
+        "socket",
+      ],
+      java: ["java.io.", "java.net.", "java.lang.Process", "System.exit"],
+      cpp: ["fstream", "iostream", "socket", "system(", "fork(", "exec"],
+      c: ["stdio.h", "stdlib.h", "unistd.h", "system(", "fork(", "exec"],
+    };
+
+    
+    
+
     try {
+      
+      
+      
       const output = execSync(command, {
         input: testCase.input,
         timeout: Math.min(testCase.timeoutMs, codeExecConfig.timeoutMs),
         maxBuffer: codeExecConfig.memoryLimitMb * 1024 * 1024,
         encoding: "utf-8",
+        env: {
+          NODE_ENV: "production",
+          PATH: process.env.PATH, 
+          
+        },
+        
       });
 
       const actualOutput = output.trim();
@@ -176,10 +218,21 @@ export class CodeExecutorService {
         actualOutput,
         expectedOutput: testCase.expectedOutput,
         isHidden: testCase.isHidden,
-        executionTimeMs: Date.now() - startTime,
+        executionTimeMs: Math.min(Date.now() - startTime, testCase.timeoutMs),
         error: null,
       };
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Execution error";
+      if (error.signal === "SIGTERM" || error.status === 124) {
+        errorMessage = "Time Limit Exceeded";
+      } else if (error.status === 139) {
+        errorMessage = "Segmentation Fault";
+      } else if (error.message.includes("stdout maxBuffer length exceeded")) {
+        errorMessage = "Memory Limit Exceeded / Output Too Large";
+      } else {
+        errorMessage = error.stderr || error.message;
+      }
+
       return {
         testCaseId: testCase.id,
         passed: false,
@@ -187,7 +240,7 @@ export class CodeExecutorService {
         expectedOutput: testCase.expectedOutput,
         isHidden: testCase.isHidden,
         executionTimeMs: Date.now() - startTime,
-        error: error instanceof Error ? error.message : "Execution error",
+        error: errorMessage,
       };
     }
   }
@@ -201,7 +254,7 @@ export class CodeExecutorService {
       try {
         unlinkSync(filePath);
       } catch {
-        // File may not exist, ignore
+        
       }
     }
   }

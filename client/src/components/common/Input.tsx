@@ -49,7 +49,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {/* Error message takes precedence over helper text */}
+        {}
         {error && <p className="text-sm text-red-600 mt-0.5">{error}</p>}
 
         {helperText && !error && (

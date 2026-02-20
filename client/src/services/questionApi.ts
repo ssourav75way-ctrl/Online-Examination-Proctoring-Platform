@@ -196,6 +196,20 @@ export const questionApi = apiSlice.injectEndpoints({
     >({
       query: ({ institutionId, questionId }) =>
         `/institutions/${institutionId}/questions/${questionId}/versions`,
+      providesTags: (_r, _e, { questionId }) => [
+        { type: "Question", id: questionId },
+      ],
+    }),
+
+    rollbackQuestion: builder.mutation<
+      { data: Question },
+      { institutionId: string; questionId: string; versionId: string }
+    >({
+      query: ({ institutionId, questionId, versionId }) => ({
+        url: `/institutions/${institutionId}/questions/${questionId}/rollback/${versionId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Question"],
     }),
   }),
 });
@@ -212,4 +226,5 @@ export const {
   useUpdateQuestionMutation,
   useDeactivateQuestionMutation,
   useGetQuestionVersionsQuery,
+  useRollbackQuestionMutation,
 } = questionApi;

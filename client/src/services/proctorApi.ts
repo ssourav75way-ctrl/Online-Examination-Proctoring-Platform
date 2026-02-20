@@ -30,6 +30,18 @@ export interface ProctorSnapshot {
   candidateAbsent: boolean;
 }
 
+export interface LiveSession {
+  id: string;
+  enrollment: {
+    candidate: { id: string; firstName: string; lastName: string };
+    exam: { id: string; title: string };
+  };
+  snapshots: ProctorSnapshot[];
+  _count: {
+    flags: number;
+  };
+}
+
 export const proctorApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPendingFlags: builder.query<
@@ -104,6 +116,17 @@ export const proctorApi = apiSlice.injectEndpoints({
     >({
       query: ({ sessionId }) => `/proctoring/sessions/${sessionId}/flags`,
     }),
+
+    getActiveSessions: builder.query<
+      { data: LiveSession[] },
+      { institutionId: string }
+    >({
+      query: ({ institutionId }) => ({
+        url: "/proctoring/active-sessions",
+        params: { institutionId },
+      }),
+      providesTags: ["Proctor"],
+    }),
   }),
 });
 
@@ -113,4 +136,5 @@ export const {
   useUploadSnapshotMutation,
   useGetSessionSnapshotsQuery,
   useGetSessionFlagsQuery,
+  useGetActiveSessionsQuery,
 } = proctorApi;

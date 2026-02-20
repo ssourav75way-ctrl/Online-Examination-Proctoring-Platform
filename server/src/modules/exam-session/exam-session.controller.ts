@@ -38,7 +38,9 @@ export class ExamSessionController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const result = await examSessionService.reconnect(req.params.sessionId as string);
+      const result = await examSessionService.reconnect(
+        req.params.sessionId as string,
+      );
       sendSuccess(res, result, "Reconnected successfully");
     } catch (error) {
       next(error);
@@ -104,6 +106,36 @@ export class ExamSessionController {
     }
   }
 
+  async getQuestion(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await examSessionService.getQuestionByIndex(
+        req.params.sessionId as string,
+        parseInt(req.params.index as string),
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMarkers(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await examSessionService.getSessionQuestionMarkers(
+        req.params.sessionId as string,
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
   async getStatus(
     req: Request,
     res: Response,

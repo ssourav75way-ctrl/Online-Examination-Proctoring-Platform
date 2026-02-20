@@ -28,9 +28,10 @@ export class DepartmentService {
     });
   }
 
-  // Fetch departments by institution, optionally filtered by authorized IDs
   async getByInstitution(institutionId: string, departmentIds?: string[]) {
-    const where: any = { institutionId };
+    const where: { institutionId: string; id?: { in: string[] } } = {
+      institutionId,
+    };
     if (departmentIds) {
       where.id = { in: departmentIds };
     }

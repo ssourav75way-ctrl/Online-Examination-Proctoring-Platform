@@ -19,6 +19,9 @@ export function QuestionPoolListPage() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [poolToEdit, setPoolToEdit] = useState<QuestionPool | undefined>(
+    undefined,
+  );
 
   const user = useSelector((state: RootState) => state.auth.user);
   const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
@@ -65,7 +68,14 @@ export function QuestionPoolListPage() {
               Clear Filter
             </Button>
           )}
-          <Button onClick={() => setIsModalOpen(true)}>+ Create Pool</Button>
+          <Button
+            onClick={() => {
+              setPoolToEdit(undefined);
+              setIsModalOpen(true);
+            }}
+          >
+            + Create Pool
+          </Button>
         </div>
       </div>
 
@@ -106,7 +116,12 @@ export function QuestionPoolListPage() {
               <p className="text-sm text-slate-500 mb-6">
                 Create your first pool to start building a question bank.
               </p>
-              <Button onClick={() => setIsModalOpen(true)}>
+              <Button
+                onClick={() => {
+                  setPoolToEdit(undefined);
+                  setIsModalOpen(true);
+                }}
+              >
                 + Create First Pool
               </Button>
             </div>
@@ -118,7 +133,7 @@ export function QuestionPoolListPage() {
                   onClick={() => navigate(`/dashboard/questions/${pool.id}`)}
                   className="card p-6 hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer group relative overflow-hidden"
                 >
-                  {/* Active indicator */}
+                  {}
                   <div
                     className={`absolute top-0 left-0 w-1 h-full ${pool.isActive ? "bg-emerald-500" : "bg-slate-300"}`}
                   />
@@ -127,11 +142,36 @@ export function QuestionPoolListPage() {
                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
                       {pool.name}
                     </h3>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${pool.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500 border border-slate-200"}`}
-                    >
-                      {pool.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="flex gap-2 items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPoolToEdit(pool);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-slate-400 hover:text-primary-600 transition-colors"
+                        title="Edit Pool"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${pool.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500 border border-slate-200"}`}
+                      >
+                        {pool.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
                   </div>
 
                   <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-10">
@@ -154,7 +194,7 @@ export function QuestionPoolListPage() {
                         />
                       </svg>
                       <span className="text-sm font-bold text-slate-600">
-                        {pool._count?.questions ?? "—"} questions
+                        {pool._count?.questions ?? ""} questions
                       </span>
                     </div>
                     {pool.isShared && (
@@ -200,6 +240,7 @@ export function QuestionPoolListPage() {
         <QuestionPoolFormModal
           institutionId={institutionId}
           onClose={() => setIsModalOpen(false)}
+          poolToEdit={poolToEdit}
         />
       )}
     </div>

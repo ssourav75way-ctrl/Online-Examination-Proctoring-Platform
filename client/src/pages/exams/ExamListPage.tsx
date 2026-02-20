@@ -1,17 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { useGetExamsByInstitutionQuery } from "@/services/examApi";
 import { Exam } from "@/types/exam";
 import { Button } from "@/components/common/Button";
 import { CONSTANTS } from "@/constants";
 import { ExamFormModal } from "./ExamFormModal";
 
-type RootState = {
-  auth: {
-    user: { institutionMembers?: { institution: { id: string } }[] } | null;
-  };
-};
+import { RootState } from "@/store";
 
 import { formatDateIST } from "@/utils/dateFormat";
 
@@ -44,9 +40,9 @@ export function ExamListPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const user = useSelector((state: RootState | any) => state.auth.user);
+  const user = useSelector((state: RootState) => state.auth.user);
   const effectiveRole = useSelector(
-    (state: RootState | any) => state.auth.effectiveRole,
+    (state: RootState) => state.auth.effectiveRole,
   );
   const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
 
@@ -116,7 +112,7 @@ export function ExamListPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-primary-600 hover:text-primary-700 opacity-0 group-hover:opacity-100 tracking-wide transition-opacity"
+            className="text-primary-600 hover:text-primary-700 tracking-wide"
             onClick={() => navigate(`/dashboard/exams/${exam.id}`)}
           >
             Manage Event

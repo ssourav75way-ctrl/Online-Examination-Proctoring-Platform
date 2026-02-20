@@ -1,6 +1,4 @@
-/**
- * Check if two time ranges overlap.
- */
+
 export const doTimeRangesOverlap = (
   start1: Date,
   end1: Date,
@@ -10,9 +8,7 @@ export const doTimeRangesOverlap = (
   return start1 < end2 && start2 < end1;
 };
 
-/**
- * Calculate adjusted duration based on accommodation type.
- */
+
 export const calculateAdjustedDuration = (
   baseDurationMinutes: number,
   accommodationType: string,
@@ -27,9 +23,7 @@ export const calculateAdjustedDuration = (
   }
 };
 
-/**
- * Calculate remaining time in seconds given server deadline and paused time.
- */
+
 export const calculateRemainingSeconds = (
   serverDeadline: Date,
   totalPausedSeconds: number,
@@ -43,9 +37,7 @@ export const calculateRemainingSeconds = (
   return Math.max(0, Math.floor(remainingMs / 1000));
 };
 
-/**
- * Check if a date is within a challenge window.
- */
+
 export const isWithinChallengeWindow = (
   publishedAt: Date,
   challengeWindowDays: number,
@@ -55,9 +47,7 @@ export const isWithinChallengeWindow = (
   return new Date() <= windowEnd;
 };
 
-/**
- * Check if candidate has passed the cooldown period since last attempt.
- */
+
 export const hasCooldownPassed = (
   lastAttemptFinishedAt: Date,
   cooldownHours: number,

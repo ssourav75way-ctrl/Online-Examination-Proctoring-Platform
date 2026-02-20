@@ -1,6 +1,6 @@
 import { QuestionType } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface CreateQuestionRequestDTO {
   poolId: string;
@@ -40,7 +40,7 @@ export interface TestCaseDTO {
   timeoutMs?: number;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface QuestionListItemDTO {
   id: string;

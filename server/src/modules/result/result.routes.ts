@@ -4,7 +4,7 @@ import { authenticate } from "../../middlewares";
 
 const router = Router();
 
-// Examiner endpoints
+
 router.post("/exams/:examId/generate", authenticate, (req, res, next) =>
   resultController.generateResults(req, res, next),
 );
@@ -21,7 +21,7 @@ router.patch("/re-evaluations/:requestId", authenticate, (req, res, next) =>
   resultController.processReEvaluation(req, res, next),
 );
 
-// Candidate endpoints
+
 router.get("/my-results", authenticate, (req, res, next) =>
   resultController.getMyResults(req, res, next),
 );

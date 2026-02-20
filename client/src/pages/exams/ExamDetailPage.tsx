@@ -154,7 +154,7 @@ export function ExamDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -196,7 +196,7 @@ export function ExamDetailPage() {
                   disabled={examQuestions.length === 0}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
-                  ✓ Publish / Schedule
+                   Publish / Schedule
                 </Button>
               </>
             )}
@@ -209,11 +209,19 @@ export function ExamDetailPage() {
                 Cancel Exam
               </Button>
             )}
+            {canManage && exam.status !== "DRAFT" && (
+              <Button
+                variant="secondary"
+                onClick={() => navigate(`/dashboard/exams/${id}/results`)}
+              >
+                Manage Results
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      {/* DRAFT warning */}
+      {}
       {exam.status === "DRAFT" && canManage && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
           <svg
@@ -240,7 +248,7 @@ export function ExamDetailPage() {
         </div>
       )}
 
-      {/* === EXAM QUESTIONS SECTION === */}
+      {}
       <div className="card p-6 bg-white border border-border/60 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -367,9 +375,9 @@ export function ExamDetailPage() {
         )}
       </div>
 
-      {/* Grid: Enrollments + Logistics */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Enrollments */}
+        {}
         <div className="lg:col-span-2 card p-6 bg-white border border-border/60 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-text-main">
@@ -445,7 +453,7 @@ export function ExamDetailPage() {
           )}
         </div>
 
-        {/* Logistics sidebar */}
+        {}
         <div className="card p-6 bg-white border border-border/60 shadow-sm">
           <h2 className="text-lg font-bold text-text-main mb-4">
             Exam Details
@@ -487,7 +495,7 @@ export function ExamDetailPage() {
         </div>
       </div>
 
-      {/* Modals */}
+      {}
       {isCandidateModalOpen && id && (
         <CandidateEnrollmentModal
           institutionId={institutionId}

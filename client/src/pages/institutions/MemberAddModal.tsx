@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { useLazySearchCandidateQuery } from "@/services/userApi";
 import {
   useAddMemberMutation,
@@ -6,7 +7,9 @@ import {
 } from "@/services/institutionApi";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
-import { useSelector } from "react-redux";
+import { ApiError } from "@/types/common";
+import { RootState } from "@/store";
+import { Role } from "@/types/auth";
 
 interface MemberAddModalProps {
   institutionId: string;
@@ -21,14 +24,12 @@ export function MemberAddModal({
   onClose,
   title = "Add Institution Member",
 }: MemberAddModalProps) {
-  const user = useSelector((state: any) => state.auth.user);
+  const user = useSelector((state: RootState) => state.auth.user);
   const isSuperAdmin = user?.globalRole === "SUPER_ADMIN";
 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState(defaultRole);
 
-  // Super Admin can ONLY add ADMINs.
-  // Institution Admins can add EXAMINERs, PROCTORs, or CANDIDATEs.
   const availableRoles = isSuperAdmin
     ? ["ADMIN"]
     : ["EXAMINER", "PROCTOR", "CANDIDATE"];
@@ -68,8 +69,11 @@ export function MemberAddModal({
         },
       }).unwrap();
       onClose();
-    } catch (err: any) {
-      setError(err?.data?.message || "Failed to add member.");
+    } catch (err: unknown) {
+      const errorMsg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        "Failed to add member.";
+      setError(errorMsg);
     }
   };
 
@@ -87,9 +91,7 @@ export function MemberAddModal({
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
-          >
-            ✕
-          </button>
+          ></button>
         </div>
 
         <form onSubmit={handleSearch} className="space-y-4">
@@ -103,7 +105,7 @@ export function MemberAddModal({
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setRole(r as any)}
+                    onClick={() => setRole(r as typeof role)}
                     className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                       role === r
                         ? "bg-primary-600 text-white shadow-md shadow-primary-200"

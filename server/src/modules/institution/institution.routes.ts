@@ -28,7 +28,7 @@ router.put(
   (req, res, next) => institutionController.update(req, res, next),
 );
 
-// Member management (institution-scoped)
+
 router.get(
   "/:institutionId/members",
   authenticate,

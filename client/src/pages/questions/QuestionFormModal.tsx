@@ -1,4 +1,3 @@
-// react-hook-form manages state internally
 import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -25,26 +24,26 @@ const questionSchema = yup.object().shape({
     .required(CONSTANTS.MESSAGES.REQUIRED_FIELD),
   marks: yup.number().min(0.5).required(CONSTANTS.MESSAGES.REQUIRED_FIELD),
   negativeMarks: yup.number().min(0).default(0),
-  // Specific fields for different types
+
   correctAnswer: yup.string().when("type", {
-    is: (val: string) => val === "FILL_BLANK",
-    then: (schema) =>
-      schema.required("Correct answer is required for fill-in-the-blank"),
+    is: (val: string) => val === "FILL_BLANK" || val === "SHORT_ANSWER",
+    then: (schema) => schema.required("Correct answer/keywords are required"),
     otherwise: (schema) => schema.optional(),
   }),
-  options: yup
-    .array()
-    .of(
-      yup.object().shape({
-        text: yup.string().required("Option text is required"),
-        isCorrect: yup.boolean().required(),
-      }),
-    )
-    .when("type", {
-      is: (val: string) => val === "MCQ" || val === "MULTI_SELECT",
-      then: (schema) => schema.min(2, "At least 2 options are required"),
-      otherwise: (schema) => schema.optional(),
-    }),
+  options: yup.array().when("type", {
+    is: (val: string) => val === "MCQ" || val === "MULTI_SELECT",
+    then: () =>
+      yup
+        .array()
+        .of(
+          yup.object().shape({
+            text: yup.string().required("Option text is required"),
+            isCorrect: yup.boolean().required(),
+          }),
+        )
+        .min(2, "At least 2 options are required"),
+    otherwise: () => yup.array().notRequired(),
+  }),
   codeLanguage: yup.string().when("type", {
     is: "CODE",
     then: (schema) =>
@@ -54,7 +53,18 @@ const questionSchema = yup.object().shape({
   codeTemplate: yup.string().optional(),
 });
 
-type QuestionFormData = yup.InferType<typeof questionSchema>;
+export interface BaseQuestionFormData {
+  type: string;
+  topic: string;
+  content: string;
+  difficulty: number;
+  marks: number;
+  negativeMarks?: number;
+  correctAnswer?: string;
+  options?: Array<{ text: string; isCorrect: boolean }>;
+  codeLanguage?: string;
+  codeTemplate?: string;
+}
 
 export function QuestionFormModal({
   institutionId,
@@ -70,7 +80,7 @@ export function QuestionFormModal({
     watch,
     setValue,
     formState: { errors },
-  } = useForm<QuestionFormData>({
+  } = useForm<BaseQuestionFormData>({
     resolver: yupResolver(questionSchema) as any,
     defaultValues: {
       type: "MCQ",
@@ -91,16 +101,28 @@ export function QuestionFormModal({
 
   const selectedType = watch("type") as QuestionType;
 
-  const onSubmit = async (data: QuestionFormData) => {
+  const onSubmit = async (data: BaseQuestionFormData) => {
     try {
       await createQuestion({
         institutionId,
         body: {
           ...data,
           poolId,
-          // Map options if needed (add temporary IDs or indices)
-          options: data.options?.map((o, idx) => ({ ...o, id: `opt-${idx}` })),
-        } as any,
+
+          options:
+            data.type === "MCQ" || data.type === "MULTI_SELECT"
+              ? data.options?.map((o, idx) => ({ ...o, id: `opt-${idx}` }))
+              : undefined,
+          keywords:
+            data.type === "SHORT_ANSWER" && data.correctAnswer
+              ? data.correctAnswer
+                  .split(",")
+                  .map((k) => ({ keyword: k.trim(), weight: 1 }))
+                  .filter((k) => k.keyword.length > 0)
+              : undefined,
+          correctAnswer:
+            data.type === "FILL_BLANK" ? data.correctAnswer : undefined,
+        },
       }).unwrap();
       onClose();
     } catch (err) {
@@ -110,8 +132,11 @@ export function QuestionFormModal({
 
   const getErrorMessage = () => {
     if (!error) return null;
-    if (typeof error === "object" && "data" in error) {
-      return (error as any).data?.message || "Failed to create question";
+    if (typeof error === "object" && error && "data" in error) {
+      return (
+        (error as { data?: { message?: string } }).data?.message ||
+        "Failed to create question"
+      );
     }
     return "An unexpected error occurred";
   };
@@ -124,9 +149,7 @@ export function QuestionFormModal({
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
-          >
-            ✕
-          </button>
+          ></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -211,7 +234,7 @@ export function QuestionFormModal({
             />
           </div>
 
-          {/* Type-specific inputs */}
+          {}
           {(selectedType === "MCQ" || selectedType === "MULTI_SELECT") && (
             <div className="space-y-4 border-t border-border pt-4">
               <div className="flex items-center justify-between">
@@ -235,7 +258,6 @@ export function QuestionFormModal({
                       checked={watch(`options.${index}.isCorrect`)}
                       onChange={(e) => {
                         if (selectedType === "MCQ") {
-                          // Uncheck others
                           fields.forEach((_, i) =>
                             setValue(`options.${i}.isCorrect`, false),
                           );
@@ -259,9 +281,7 @@ export function QuestionFormModal({
                         type="button"
                         onClick={() => remove(index)}
                         className="mt-2.5 text-text-muted hover:text-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
+                      ></button>
                     )}
                   </div>
                 ))}
@@ -274,12 +294,21 @@ export function QuestionFormModal({
             </div>
           )}
 
-          {selectedType === "FILL_BLANK" && (
+          {(selectedType === "FILL_BLANK" ||
+            selectedType === "SHORT_ANSWER") && (
             <div className="border-t border-border pt-4">
               <Input
-                label="Correct Answer"
+                label={
+                  selectedType === "FILL_BLANK"
+                    ? "Correct Answer"
+                    : "Expected Answer / Keywords"
+                }
                 id="correctAnswer"
-                placeholder="The exact expected string"
+                placeholder={
+                  selectedType === "FILL_BLANK"
+                    ? "The exact expected string"
+                    : "Comma separated keywords or expected string"
+                }
                 error={errors.correctAnswer?.message}
                 {...register("correctAnswer")}
               />

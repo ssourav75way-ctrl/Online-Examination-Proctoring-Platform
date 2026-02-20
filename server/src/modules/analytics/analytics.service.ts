@@ -8,9 +8,7 @@ import {
 } from "../../types/grading.types";
 
 export class AnalyticsService {
-  /**
-   * Per-question difficulty index: % candidates who got it right.
-   */
+  
   async getQuestionDifficultyIndex(examQuestionId: string): Promise<number> {
     const answers = await prisma.candidateAnswer.findMany({
       where: { examQuestionId },
@@ -32,15 +30,12 @@ export class AnalyticsService {
     return correctCount / answers.length;
   }
 
-  /**
-   * Discrimination index: does the question differentiate high vs low performers.
-   * Uses top and bottom 27% of total scores.
-   */
+  
   async getDiscriminationIndex(
     examId: string,
     examQuestionId: string,
   ): Promise<number> {
-    // Get all results sorted by total score
+    
     const results = await prisma.examResult.findMany({
       where: { enrollment: { examId } },
       orderBy: { totalScore: "desc" },
@@ -52,7 +47,7 @@ export class AnalyticsService {
     const topGroup = results.slice(0, n27).map((r) => r.enrollmentId);
     const bottomGroup = results.slice(-n27).map((r) => r.enrollmentId);
 
-    // Get answer scores for this question from each group
+    
     const topAnswers = await prisma.candidateAnswer.findMany({
       where: {
         examQuestionId,
@@ -98,9 +93,7 @@ export class AnalyticsService {
     return topCorrectRate - bottomCorrectRate;
   }
 
-  /**
-   * Distractor analysis for MCQs: which wrong answers are most popular.
-   */
+  
   async getDistractorAnalysis(
     examQuestionId: string,
   ): Promise<DistractorInfo[]> {
@@ -133,7 +126,7 @@ export class AnalyticsService {
     for (const answer of answers) {
       if (answer.answerContent) {
         try {
-          // Handle multi-select (JSON array) or single select (string)
+          
           const selected = answer.answerContent.startsWith("[")
             ? (JSON.parse(answer.answerContent) as string[])
             : [answer.answerContent];
@@ -161,9 +154,7 @@ export class AnalyticsService {
     }));
   }
 
-  /**
-   * Full analytics for an exam: per-question metrics + flags for poor psychometric properties.
-   */
+  
   async getExamAnalytics(examId: string): Promise<QuestionAnalytics[]> {
     const examQuestions = await prisma.examQuestion.findMany({
       where: { examId },
@@ -186,7 +177,7 @@ export class AnalyticsService {
           ? await this.getDistractorAnalysis(eq.id)
           : [];
 
-      // Flag questions with poor psychometric properties
+      
       let flagged = false;
       let flagReason: string | null = null;
 
@@ -217,9 +208,7 @@ export class AnalyticsService {
     return analytics;
   }
 
-  /**
-   * Get exam integrity report: per-candidate integrity scores with drill-down evidence.
-   */
+  
   async getIntegrityReport(
     examId: string,
   ): Promise<CandidateIntegrityReport[]> {

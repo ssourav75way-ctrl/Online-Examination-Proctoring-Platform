@@ -8,58 +8,17 @@ import { QuestionType } from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 import { McqOption, KeywordConfig } from "../../types/exam.types";
 
-interface CreateQuestionInput {
-  poolId: string;
-  type: QuestionType;
-  topic: string;
-  content: string;
-  difficulty: number;
-  marks: number;
-  negativeMarks?: number;
-  options?: McqOption[];
-  correctAnswer?: string;
-  keywords?: KeywordConfig[];
-  similarityThreshold?: number;
-  codeTemplate?: string;
-  codeLanguage?: string;
-  testCases?: {
-    input: string;
-    expectedOutput: string;
-    isHidden: boolean;
-    timeoutMs?: number;
-  }[];
-}
-
-interface UpdateQuestionInput {
-  content?: string;
-  difficulty?: number;
-  marks?: number;
-  negativeMarks?: number;
-  options?: McqOption[];
-  correctAnswer?: string;
-  keywords?: KeywordConfig[];
-  similarityThreshold?: number;
-  codeTemplate?: string;
-  codeLanguage?: string;
-  testCases?: {
-    input: string;
-    expectedOutput: string;
-    isHidden: boolean;
-    timeoutMs?: number;
-  }[];
-}
+import {
+  CreateQuestionInput,
+  UpdateQuestionInput,
+} from "../../types/modules/question.types";
 
 export class QuestionService {
-  /**
-   * Create a question with its first version.
-   * Examiner can only create questions in pools they have access to.
-   */
   async create(
     input: CreateQuestionInput,
     userId: string,
     departmentIds: string[],
   ) {
-    // Verify pool exists and user has access
     const pool = await prisma.questionPool.findUnique({
       where: { id: input.poolId },
       include: { department: true },
@@ -67,19 +26,16 @@ export class QuestionService {
 
     if (!pool) throw new NotFoundError("Question pool not found");
 
-    // Check department access (examiners can only tag questions to pools they have access to)
     if (!departmentIds.includes(pool.departmentId) && !pool.isShared) {
       throw new ForbiddenError("You do not have access to this question pool");
     }
 
-    // Coerce numeric fields (they may arrive as strings from form inputs)
     input.difficulty = Number(input.difficulty) || 1;
     input.marks = Number(input.marks) || 1;
     input.negativeMarks = Number(input.negativeMarks) || 0;
 
     this.validateQuestionInput(input);
 
-    // Create question and version 1 in a transaction
     const result = await prisma.$transaction(async (tx) => {
       const question = await tx.question.create({
         data: {
@@ -112,7 +68,6 @@ export class QuestionService {
         },
       });
 
-      // Create test cases if provided
       if (input.testCases && input.testCases.length > 0) {
         await tx.questionTestCase.createMany({
           data: input.testCases.map((tc, idx) => ({
@@ -126,7 +81,6 @@ export class QuestionService {
         });
       }
 
-      // Update question with current version reference
       await tx.question.update({
         where: { id: question.id },
         data: { currentVersionId: version.id },
@@ -138,10 +92,6 @@ export class QuestionService {
     return this.getById(result.question.id);
   }
 
-  /**
-   * Edit a question — creates a NEW version. Previous versions are preserved.
-   * If exam is in progress or scheduled, it stays pinned to the version at scheduling time.
-   */
   async update(questionId: string, input: UpdateQuestionInput, userId: string) {
     const question = await prisma.question.findUnique({
       where: { id: questionId },
@@ -157,7 +107,6 @@ export class QuestionService {
 
     const newVersionNumber = latestVersion.versionNumber + 1;
 
-    // Create new version (old versions are preserved, pinned exams unaffected)
     const newVersion = await prisma.$transaction(async (tx) => {
       const version = await tx.questionVersion.create({
         data: {
@@ -182,7 +131,6 @@ export class QuestionService {
         },
       });
 
-      // Create test cases for new version
       if (input.testCases) {
         await tx.questionTestCase.createMany({
           data: input.testCases.map((tc, idx) => ({
@@ -195,7 +143,6 @@ export class QuestionService {
           })),
         });
       } else {
-        // Copy test cases from previous version
         const prevTestCases = await tx.questionTestCase.findMany({
           where: { questionVersionId: latestVersion.id },
           orderBy: { orderIndex: "asc" },
@@ -215,13 +162,79 @@ export class QuestionService {
         }
       }
 
-      // Update current version pointer
       await tx.question.update({
         where: { id: questionId },
         data: { currentVersionId: version.id },
       });
 
       return version;
+    });
+
+    return this.getById(questionId);
+  }
+
+  async rollbackVersion(questionId: string, versionId: string, userId: string) {
+    const targetVersion = await prisma.questionVersion.findUnique({
+      where: { id: versionId },
+      include: { testCases: true },
+    });
+
+    if (!targetVersion) throw new NotFoundError("Target version not found");
+    if (targetVersion.questionId !== questionId) {
+      throw new BadRequestError("Version does not belong to this question");
+    }
+
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        versions: { orderBy: { versionNumber: "desc" }, take: 1 },
+      },
+    });
+
+    if (!question) throw new NotFoundError("Question not found");
+
+    const newVersionNumber = question.versions[0].versionNumber + 1;
+
+    await prisma.$transaction(async (tx) => {
+      const version = await tx.questionVersion.create({
+        data: {
+          questionId,
+          versionNumber: newVersionNumber,
+          content: targetVersion.content,
+          difficulty: targetVersion.difficulty,
+          marks: targetVersion.marks,
+          negativeMarks: targetVersion.negativeMarks,
+          options: targetVersion.options
+            ? JSON.parse(JSON.stringify(targetVersion.options))
+            : null,
+          correctAnswer: targetVersion.correctAnswer,
+          keywords: targetVersion.keywords
+            ? JSON.parse(JSON.stringify(targetVersion.keywords))
+            : null,
+          similarityThreshold: targetVersion.similarityThreshold,
+          codeTemplate: targetVersion.codeTemplate,
+          codeLanguage: targetVersion.codeLanguage,
+          createdById: userId,
+        },
+      });
+
+      if (targetVersion.testCases.length > 0) {
+        await tx.questionTestCase.createMany({
+          data: targetVersion.testCases.map((tc) => ({
+            questionVersionId: version.id,
+            input: tc.input,
+            expectedOutput: tc.expectedOutput,
+            isHidden: tc.isHidden,
+            timeoutMs: tc.timeoutMs,
+            orderIndex: tc.orderIndex,
+          })),
+        });
+      }
+
+      await tx.question.update({
+        where: { id: questionId },
+        data: { currentVersionId: version.id },
+      });
     });
 
     return this.getById(questionId);
@@ -291,7 +304,6 @@ export class QuestionService {
       prisma.question.count({ where }),
     ]);
 
-    // Filter by difficulty on the latest version if needed
     let filtered = questions;
     if (filters?.difficulty !== undefined) {
       filtered = questions.filter(
@@ -363,9 +375,6 @@ export class QuestionService {
         "Fill-in-blank questions must have a correct answer",
       );
     }
-
-    // CODE test cases and SHORT_ANSWER keywords are recommended but not mandatory at creation time.
-    // They can be added later via question update.
   }
 }
 

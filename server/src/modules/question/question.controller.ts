@@ -90,7 +90,9 @@ export class QuestionController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const versions = await questionService.getVersionHistory(req.params.id as string);
+      const versions = await questionService.getVersionHistory(
+        req.params.id as string,
+      );
       sendSuccess(res, versions);
     } catch (error) {
       next(error);
@@ -105,6 +107,23 @@ export class QuestionController {
     try {
       await questionService.deactivate(req.params.id as string);
       sendSuccess(res, null, "Question deactivated");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rollback(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const question = await questionService.rollbackVersion(
+        req.params.id as string,
+        req.params.versionId as string,
+        req.user!.userId,
+      );
+      sendSuccess(res, question, "Question rolled back successfully");
     } catch (error) {
       next(error);
     }

@@ -1,5 +1,5 @@
 import { apiSlice } from "./api";
-import { Exam } from "@/types/exam";
+import { Exam, Enrollment } from "@/types/modules/exam.types";
 
 interface ExamListParams {
   institutionId: string;
@@ -20,23 +20,6 @@ interface RescheduleParams {
   examId: string;
   scheduledStartTime: string;
   scheduledEndTime: string;
-}
-
-interface Enrollment {
-  id: string;
-  examId: string;
-  candidateId: string;
-  attemptNumber: number;
-  status: string;
-  accommodationType: string;
-  adjustedDurationMinutes: number | null;
-  enrolledAt: string;
-  candidate: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
 }
 
 export const examApi = apiSlice.injectEndpoints({

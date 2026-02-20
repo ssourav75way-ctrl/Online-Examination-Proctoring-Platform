@@ -3,11 +3,7 @@ import { ForbiddenError, UnauthorizedError } from "../utils/app-error";
 import prisma from "../config/database.config";
 import { InstitutionScopedUser } from "../types/auth.types";
 
-/**
- * Middleware to scope the request to a specific institution.
- * Reads institutionId from route params and validates membership.
- * Populates req.scopedUser with institution-specific role and department access.
- */
+
 export const institutionScope = async (
   req: Request,
   _res: Response,
@@ -27,7 +23,7 @@ export const institutionScope = async (
       throw new ForbiddenError("Institution context required");
     }
 
-    // Super admins bypass institution membership check
+    
     if (req.user.globalRole === "SUPER_ADMIN") {
       const allDepts = await prisma.department.findMany({
         where: { institutionId },
@@ -70,8 +66,8 @@ export const institutionScope = async (
     );
 
     if (normalizedRole === "ADMIN" || normalizedRole === "EXAMINER") {
-      // If ADMIN, grant all.
-      // If EXAMINER, check if they have specific assignments. If none, grant all for now to avoid blocking.
+      
+      
       if (
         normalizedRole === "ADMIN" ||
         membership.departmentAccess.length === 0
@@ -93,7 +89,7 @@ export const institutionScope = async (
         );
       }
     } else {
-      // For other roles, use specific department assignments
+      
       departmentIds = membership.departmentAccess.map((da) => da.departmentId);
       console.log(
         `[InstitutionScope] Access granted to ${departmentIds.length} departments for ${normalizedRole}`,

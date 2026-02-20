@@ -1,10 +1,7 @@
 import { useRouteError, isRouteErrorResponse, Link } from "react-router-dom";
 import { Button } from "@/components/common/Button";
 
-/**
- * Global Error Boundary component that catches router-level exceptions.
- * Banning complex logic by relying on React Router's built-in error handling.
- */
+
 export function ErrorBoundary() {
   const error = useRouteError();
 
@@ -12,7 +9,7 @@ export function ErrorBoundary() {
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    // This is a known router error (e.g., 404)
+    
     errorMessage = error.data?.message || error.statusText;
     errorStatus = error.status;
   } else if (error instanceof Error) {

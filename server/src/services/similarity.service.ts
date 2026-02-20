@@ -1,11 +1,6 @@
-/**
- * Text similarity service for short answer grading.
- * Uses Levenshtein distance and keyword matching.
- */
+
 export class SimilarityService {
-  /**
-   * Calculate Levenshtein distance between two strings.
-   */
+  
   levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = [];
 
@@ -30,9 +25,7 @@ export class SimilarityService {
     return matrix[a.length][b.length];
   }
 
-  /**
-   * Calculate similarity ratio between two strings (0-1).
-   */
+  
   similarityRatio(a: string, b: string): number {
     const maxLength = Math.max(a.length, b.length);
     if (maxLength === 0) return 1;
@@ -40,9 +33,7 @@ export class SimilarityService {
     return 1 - distance / maxLength;
   }
 
-  /**
-   * Calculate Jaccard similarity between two sets of words.
-   */
+  
   jaccardSimilarity(a: string, b: string): number {
     const wordsA = new Set(
       a
@@ -64,10 +55,7 @@ export class SimilarityService {
     return intersection.size / union.size;
   }
 
-  /**
-   * Score a short answer based on keyword matching.
-   * Each keyword has a weight; total score = sum of matched keyword weights / total weight.
-   */
+  
   scoreShortAnswer(
     answer: string,
     keywords: { keyword: string; weight: number }[],
@@ -83,14 +71,14 @@ export class SimilarityService {
       totalWeight += weight;
       const normalizedKeyword = keyword.toLowerCase();
 
-      // Check exact containment
+      
       if (normalizedAnswer.includes(normalizedKeyword)) {
         matchedKeywords.push(keyword);
         matchedWeight += weight;
         continue;
       }
 
-      // Check similarity against each word in the answer
+      
       const answerWords = normalizedAnswer.split(/\s+/);
       let found = false;
       for (const word of answerWords) {
@@ -116,15 +104,12 @@ export class SimilarityService {
     };
   }
 
-  /**
-   * Compare two answer patterns for collusion detection.
-   * Uses cosine similarity on answer vectors.
-   */
+  
   compareAnswerPatterns(
     answers1: { questionId: string; score: number }[],
     answers2: { questionId: string; score: number }[],
   ): number {
-    // Build aligned vectors
+    
     const allQuestionIds = new Set([
       ...answers1.map((a) => a.questionId),
       ...answers2.map((a) => a.questionId),

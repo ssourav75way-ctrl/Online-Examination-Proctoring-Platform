@@ -55,7 +55,7 @@ export class AdaptiveEngineService {
 
     if (unanswered.length === 0) return null;
 
-    // Track how many questions have been seen per topic so far for coverage balancing
+    
     const topicAnswerCounts: Record<string, number> = {};
     for (const eq of examQuestions) {
       if (answeredQuestionIds.has(eq.id)) {
@@ -67,9 +67,9 @@ export class AdaptiveEngineService {
     const abilityTargetDifficulty =
       this.calculateTargetDifficulty(adaptiveState);
 
-    // If an adaptive config is present, use a budget-aware selector that
-    // tracks remaining difficulty and corrects near the end so all
-    // candidates converge to the same total difficulty.
+    
+    
+    
     if (exam.adaptiveConfig) {
       const targetDifficultySum = exam.adaptiveConfig.targetDifficultySum;
       const totalQuestions = examQuestions.length;
@@ -88,8 +88,8 @@ export class AdaptiveEngineService {
           ? remainingBudget / remainingQuestions
           : abilityTargetDifficulty;
 
-      // Early in the exam, follow the ability-driven target.
-      // Near the end, follow the budget-driven target to hit the sum.
+      
+      
       const progress =
         totalQuestions > 0
           ? (totalQuestions - remainingQuestions) / totalQuestions
@@ -116,8 +116,8 @@ export class AdaptiveEngineService {
         (topic) => (topicAnswerCounts[topic] || 0) === 0,
       );
 
-      // Enforce "no topic can be skipped" — if we are close to the end
-      // and some topics have never been seen, force-pick from them.
+      
+      
       if (zeroTopics.length > 0 && remainingQuestions <= zeroTopics.length) {
         selectedTopic = zeroTopics[0];
       } else {
@@ -143,8 +143,8 @@ export class AdaptiveEngineService {
           bestScore = score;
           selected = eq;
         } else if (score === bestScore && remainingQuestions === 1) {
-          // For the final question, tie-break toward the one that
-          // gets total difficulty closest to the configured target.
+          
+          
           const bestFinalDiff = Math.abs(
             sumDifficultySoFar + selected.questionVersion.difficulty -
               targetDifficultySum,
@@ -191,8 +191,8 @@ export class AdaptiveEngineService {
     let minCoverage = Infinity;
 
     for (const [topic] of topicGroups) {
-      // Fallback selector (no adaptiveConfig): balance topics based on
-      // how many questions the candidate has already seen from each.
+      
+      
       const coverage = topicAnswerCounts[topic] || 0;
       if (coverage < minCoverage) {
         minCoverage = coverage;
@@ -267,7 +267,7 @@ export class AdaptiveEngineService {
   }
 
   private calculateTargetDifficulty(state: AdaptiveState): number {
-    if (state.questionsServed === 0) return 5; // Start at medium
+    if (state.questionsServed === 0) return 5; 
 
     const overallAccuracy =
       state.questionsServed > 0 ? state.runningAccuracy : 0.5;
@@ -301,7 +301,7 @@ export class AdaptiveEngineService {
       newState.topicAccuracyMap[topic].correct++;
     }
 
-    // Recalculate running accuracy
+    
     const totalCorrect = Object.values(newState.topicAccuracyMap).reduce(
       (sum, t) => sum + t.correct,
       0,

@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { generalLimiter, errorHandler } from "./middlewares";
 
-// Route imports
+
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/user/user.routes";
 import institutionRoutes from "./modules/institution/institution.routes";
@@ -56,5 +56,4 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 export default app;
-/*
-there is nothing stored in the localstorage set it to the cookie or in localstorage make the tokenn accessable it is coming as accesstoken and refreshtoken from the backend make it assign correct make sure   you got the */
+

@@ -33,7 +33,7 @@ export function InstitutionListPage() {
         <div>
           <h1 className="text-2xl font-bold text-text-main">Institutions</h1>
           <p className="text-text-muted mt-1">
-            Manage registered institutions and their departments.
+            Manage registered institutions and their access.
           </p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>Add Institution</Button>

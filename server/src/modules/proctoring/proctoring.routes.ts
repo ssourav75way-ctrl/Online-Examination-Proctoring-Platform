@@ -4,12 +4,12 @@ import { authenticate, snapshotLimiter } from "../../middlewares";
 
 const router = Router();
 
-// Candidate endpoints
+
 router.post("/snapshots", authenticate, snapshotLimiter, (req, res, next) =>
   proctoringController.uploadSnapshot(req, res, next),
 );
 
-// Proctor endpoints
+
 router.get("/flags/pending", authenticate, (req, res, next) =>
   proctoringController.getPendingFlags(req, res, next),
 );
@@ -21,6 +21,9 @@ router.get("/sessions/:sessionId/snapshots", authenticate, (req, res, next) =>
 );
 router.get("/sessions/:sessionId/flags", authenticate, (req, res, next) =>
   proctoringController.getSessionFlags(req, res, next),
+);
+router.get("/active-sessions", authenticate, (req, res, next) =>
+  proctoringController.getActiveSessions(req, res, next),
 );
 
 export default router;

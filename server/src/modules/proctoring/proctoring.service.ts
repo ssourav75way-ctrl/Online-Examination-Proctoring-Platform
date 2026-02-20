@@ -13,9 +13,7 @@ interface UploadSnapshotInput {
 }
 
 export class ProctoringService {
-  /**
-   * Upload a webcam snapshot and auto-flag anomalies.
-   */
+  
   async uploadSnapshot(input: UploadSnapshotInput) {
     const session = await prisma.examSession.findUnique({
       where: { id: input.sessionId },
@@ -32,7 +30,7 @@ export class ProctoringService {
       },
     });
 
-    // Auto-flag anomalies
+    
     const flags: {
       flagType: FlagType;
       description: string;
@@ -78,9 +76,7 @@ export class ProctoringService {
     return { snapshot, flags: createdFlags };
   }
 
-  /**
-   * Get all pending flags for proctor review (queued — NOT auto-terminate).
-   */
+  
   async getPendingFlags(pagination: PaginationParams, institutionId?: string) {
     const where: Record<string, unknown> = {
       reviewStatus: ReviewStatus.PENDING,
@@ -120,10 +116,7 @@ export class ProctoringService {
     return { flags, total };
   }
 
-  /**
-   * Review a proctor flag (approve or dismiss).
-   * Flags don't auto-terminate the exam — they queue for review.
-   */
+  
   async reviewFlag(
     flagId: string,
     reviewedById: string,
@@ -144,9 +137,7 @@ export class ProctoringService {
     });
   }
 
-  /**
-   * Get snapshots for a session.
-   */
+  
   async getSessionSnapshots(sessionId: string, pagination: PaginationParams) {
     const [snapshots, total] = await Promise.all([
       prisma.proctorSnapshot.findMany({
@@ -164,9 +155,7 @@ export class ProctoringService {
     return { snapshots, total };
   }
 
-  /**
-   * Get flags for a specific session.
-   */
+  
   async getSessionFlags(sessionId: string) {
     return prisma.proctorFlag.findMany({
       where: { sessionId },
@@ -176,6 +165,34 @@ export class ProctoringService {
       },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  
+  async getActiveSessions(institutionId: string) {
+    const sessions = await prisma.examSession.findMany({
+      where: {
+        finishedAt: null,
+        enrollment: { exam: { institutionId } },
+      },
+      include: {
+        enrollment: {
+          include: {
+            candidate: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+            exam: { select: { id: true, title: true } },
+          },
+        },
+        snapshots: {
+          orderBy: { capturedAt: "desc" },
+          take: 1,
+        },
+        _count: { select: { flags: { where: { reviewStatus: "PENDING" } } } },
+      },
+      orderBy: { startedAt: "desc" },
+    });
+
+    return sessions;
   }
 }
 

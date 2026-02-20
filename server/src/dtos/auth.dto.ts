@@ -1,6 +1,6 @@
 import { GlobalRole } from "@prisma/client";
 
-/* ─── Request DTOs ─── */
+
 
 export interface RegisterRequestDTO {
   email: string;
@@ -19,7 +19,7 @@ export interface RefreshTokenRequestDTO {
   refreshToken: string;
 }
 
-/* ─── Response DTOs ─── */
+
 
 export interface UserProfileDTO {
   id: string;

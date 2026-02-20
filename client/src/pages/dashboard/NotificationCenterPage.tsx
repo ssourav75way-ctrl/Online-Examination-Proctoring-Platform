@@ -58,7 +58,7 @@ export function NotificationCenterPage() {
       try {
         await markAsRead({ id: notification.id }).unwrap();
       } catch {
-        // ignore failure, user can retry by reopening
+        
       }
     }
 
@@ -72,7 +72,7 @@ export function NotificationCenterPage() {
     try {
       await markAllAsRead().unwrap();
     } catch {
-      // errors are surfaced via global error handling
+      
     }
   };
 

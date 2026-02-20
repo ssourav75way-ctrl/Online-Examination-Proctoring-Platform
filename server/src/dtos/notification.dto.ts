@@ -1,6 +1,6 @@
 import { NotificationType } from "@prisma/client";
 
-/* ─── Response DTOs ─── */
+
 
 export interface NotificationDTO {
   id: string;

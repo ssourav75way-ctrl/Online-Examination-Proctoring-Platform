@@ -102,6 +102,22 @@ export class ProctoringController {
       next(error);
     }
   }
+
+  async getActiveSessions(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const institutionId =
+        (req.query.institutionId as string) ||
+        (req.params.institutionId as string);
+      const sessions = await proctoringService.getActiveSessions(institutionId);
+      sendSuccess(res, sessions, "Active proctoring sessions retrieved");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const proctoringController = new ProctoringController();
