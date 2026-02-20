@@ -7,7 +7,6 @@ import {
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 import { useSelector } from "react-redux";
-import { RootState } from "@reduxjs/toolkit/query";
 
 interface MemberAddModalProps {
   institutionId: string;

@@ -90,5 +90,10 @@ export const ROLE_NAVIGATION_MAP: Record<string, RoleMapItem[]> = {
       label: "Results History",
       icon: Icons.BookOpen,
     },
+    {
+      path: "/dashboard/notifications",
+      label: "Notifications",
+      icon: Icons.Settings,
+    },
   ],
 };

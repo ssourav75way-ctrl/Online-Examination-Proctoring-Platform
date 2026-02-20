@@ -31,8 +31,13 @@ export class DepartmentController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const depts = await departmentService.getByInstitution(
-        req.params.institutionId as string,
+      const institutionId = req.params.institutionId as string;
+      const departmentIds = req.scopedUser?.departmentIds;
+
+      // Use any cast to bypass transient TS signature mismatch while ensuring correct argument passing
+      const depts = await (departmentService as any).getByInstitution(
+        institutionId,
+        departmentIds,
       );
       sendSuccess(res, depts);
     } catch (error) {

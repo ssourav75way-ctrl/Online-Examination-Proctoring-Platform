@@ -69,7 +69,7 @@ export default function UserManagementPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setSelectedRole("EXAMINER");
               setIsModalOpen(true);
@@ -78,7 +78,7 @@ export default function UserManagementPage() {
             Add Examiner
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setSelectedRole("PROCTOR");
               setIsModalOpen(true);

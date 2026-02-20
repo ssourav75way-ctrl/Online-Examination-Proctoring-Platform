@@ -11,21 +11,34 @@ export class AdaptiveEngineService {
     examId: string,
     adaptiveState: AdaptiveState,
   ): Promise<QuestionDeliveryItem | null> {
-    const examQuestions = await prisma.examQuestion.findMany({
-      where: { examId },
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
       include: {
-        question: true,
-        questionVersion: {
+        adaptiveConfig: {
+          include: { topicQuotas: true },
+        },
+        questions: {
           include: {
-            testCases: {
-              where: { isHidden: false },
-              orderBy: { orderIndex: "asc" },
+            question: true,
+            questionVersion: {
+              include: {
+                testCases: {
+                  where: { isHidden: false },
+                  orderBy: { orderIndex: "asc" },
+                },
+              },
             },
           },
+          orderBy: { orderIndex: "asc" },
         },
       },
-      orderBy: { orderIndex: "asc" },
     });
+
+    if (!exam) {
+      return null;
+    }
+
+    const examQuestions = exam.questions;
 
     const answeredQuestionIds = new Set(
       (
@@ -42,7 +55,127 @@ export class AdaptiveEngineService {
 
     if (unanswered.length === 0) return null;
 
-    const targetDifficulty = this.calculateTargetDifficulty(adaptiveState);
+    // Track how many questions have been seen per topic so far for coverage balancing
+    const topicAnswerCounts: Record<string, number> = {};
+    for (const eq of examQuestions) {
+      if (answeredQuestionIds.has(eq.id)) {
+        const topic = eq.question.topic;
+        topicAnswerCounts[topic] = (topicAnswerCounts[topic] || 0) + 1;
+      }
+    }
+
+    const abilityTargetDifficulty =
+      this.calculateTargetDifficulty(adaptiveState);
+
+    // If an adaptive config is present, use a budget-aware selector that
+    // tracks remaining difficulty and corrects near the end so all
+    // candidates converge to the same total difficulty.
+    if (exam.adaptiveConfig) {
+      const targetDifficultySum = exam.adaptiveConfig.targetDifficultySum;
+      const totalQuestions = examQuestions.length;
+
+      let sumDifficultySoFar = 0;
+      for (const eq of examQuestions) {
+        if (answeredQuestionIds.has(eq.id)) {
+          sumDifficultySoFar += eq.questionVersion.difficulty;
+        }
+      }
+
+      const remainingQuestions = unanswered.length;
+      const remainingBudget = targetDifficultySum - sumDifficultySoFar;
+      const idealPerQuestion =
+        remainingQuestions > 0
+          ? remainingBudget / remainingQuestions
+          : abilityTargetDifficulty;
+
+      // Early in the exam, follow the ability-driven target.
+      // Near the end, follow the budget-driven target to hit the sum.
+      const progress =
+        totalQuestions > 0
+          ? (totalQuestions - remainingQuestions) / totalQuestions
+          : 0;
+      const weightAbility = Math.max(0, Math.min(1, 1 - progress));
+      const blendedTargetDifficulty =
+        weightAbility * abilityTargetDifficulty +
+        (1 - weightAbility) * idealPerQuestion;
+
+      const topicGroups = new Map<string, typeof unanswered>();
+      for (const eq of unanswered) {
+        const topic = eq.question.topic;
+        if (!topicGroups.has(topic)) {
+          topicGroups.set(topic, []);
+        }
+        topicGroups.get(topic)!.push(eq);
+      }
+
+      const topics = Array.from(topicGroups.keys());
+      let selectedTopic = topics[0];
+      let minCount = Infinity;
+
+      const zeroTopics = topics.filter(
+        (topic) => (topicAnswerCounts[topic] || 0) === 0,
+      );
+
+      // Enforce "no topic can be skipped" — if we are close to the end
+      // and some topics have never been seen, force-pick from them.
+      if (zeroTopics.length > 0 && remainingQuestions <= zeroTopics.length) {
+        selectedTopic = zeroTopics[0];
+      } else {
+        for (const topic of topics) {
+          const count = topicAnswerCounts[topic] || 0;
+          if (count < minCount) {
+            minCount = count;
+            selectedTopic = topic;
+          }
+        }
+      }
+
+      const topicQuestions = topicGroups.get(selectedTopic) || unanswered;
+
+      let selected = topicQuestions[0];
+      let bestScore = Infinity;
+
+      for (const eq of topicQuestions) {
+        const difficulty = eq.questionVersion.difficulty;
+        const score = Math.abs(difficulty - blendedTargetDifficulty);
+
+        if (score < bestScore) {
+          bestScore = score;
+          selected = eq;
+        } else if (score === bestScore && remainingQuestions === 1) {
+          // For the final question, tie-break toward the one that
+          // gets total difficulty closest to the configured target.
+          const bestFinalDiff = Math.abs(
+            sumDifficultySoFar + selected.questionVersion.difficulty -
+              targetDifficultySum,
+          );
+          const candidateFinalDiff = Math.abs(
+            sumDifficultySoFar + difficulty - targetDifficultySum,
+          );
+          if (candidateFinalDiff < bestFinalDiff) {
+            selected = eq;
+          }
+        }
+      }
+
+      const version = selected.questionVersion;
+
+      return {
+        examQuestionId: selected.id,
+        questionVersionId: version.id,
+        type: selected.question.type,
+        content: version.content,
+        options: version.options as McqOption[] | null,
+        codeTemplate: version.codeTemplate,
+        codeLanguage: version.codeLanguage,
+        marks: version.marks,
+        orderIndex: selected.orderIndex,
+        screenReaderHint: this.generateScreenReaderHint(
+          selected.question.type,
+          version.content,
+        ),
+      };
+    }
 
     const topicGroups = new Map<string, typeof unanswered>();
     for (const eq of unanswered) {
@@ -58,7 +191,9 @@ export class AdaptiveEngineService {
     let minCoverage = Infinity;
 
     for (const [topic] of topicGroups) {
-      const coverage = topicCoverage[topic]?.total || 0;
+      // Fallback selector (no adaptiveConfig): balance topics based on
+      // how many questions the candidate has already seen from each.
+      const coverage = topicAnswerCounts[topic] || 0;
       if (coverage < minCoverage) {
         minCoverage = coverage;
         selectedTopic = topic;
@@ -68,8 +203,12 @@ export class AdaptiveEngineService {
     const topicQuestions = topicGroups.get(selectedTopic) || unanswered;
 
     const sorted = topicQuestions.sort((a, b) => {
-      const diffA = Math.abs(a.questionVersion.difficulty - targetDifficulty);
-      const diffB = Math.abs(b.questionVersion.difficulty - targetDifficulty);
+      const diffA = Math.abs(
+        a.questionVersion.difficulty - abilityTargetDifficulty,
+      );
+      const diffB = Math.abs(
+        b.questionVersion.difficulty - abilityTargetDifficulty,
+      );
       return diffA - diffB;
     });
 

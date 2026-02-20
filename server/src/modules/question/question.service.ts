@@ -72,6 +72,11 @@ export class QuestionService {
       throw new ForbiddenError("You do not have access to this question pool");
     }
 
+    // Coerce numeric fields (they may arrive as strings from form inputs)
+    input.difficulty = Number(input.difficulty) || 1;
+    input.marks = Number(input.marks) || 1;
+    input.negativeMarks = Number(input.negativeMarks) || 0;
+
     this.validateQuestionInput(input);
 
     // Create question and version 1 in a transaction
@@ -359,21 +364,8 @@ export class QuestionService {
       );
     }
 
-    if (
-      input.type === "CODE" &&
-      (!input.testCases || input.testCases.length === 0)
-    ) {
-      throw new BadRequestError(
-        "Code questions must have at least 1 test case",
-      );
-    }
-
-    if (
-      input.type === "SHORT_ANSWER" &&
-      (!input.keywords || input.keywords.length === 0)
-    ) {
-      throw new BadRequestError("Short answer questions must have keywords");
-    }
+    // CODE test cases and SHORT_ANSWER keywords are recommended but not mandatory at creation time.
+    // They can be added later via question update.
   }
 }
 

@@ -6,7 +6,7 @@ import {
   requireInstitutionRole,
 } from "../../middlewares";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 router.post(
   "/:institutionId/departments",

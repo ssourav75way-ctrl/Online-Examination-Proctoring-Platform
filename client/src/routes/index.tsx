@@ -41,6 +41,9 @@ const ExamSessionPage = lazy(
 const ResultsHistoryPage = lazy(
   () => import("@/pages/dashboard/ResultsHistoryPage"),
 );
+const NotificationCenterPage = lazy(
+  () => import("@/pages/dashboard/NotificationCenterPage"),
+);
 const UnauthorizedPage = lazy(() => import("@/pages/auth/UnauthorizedPage"));
 
 const Loader = () => (
@@ -103,6 +106,7 @@ const router = createBrowserRouter([
           { path: "exams/:id", element: <ExamDetailPage /> },
           { path: "sessions", element: <ProctorQueuePage /> },
           { path: "history", element: <ResultsHistoryPage /> },
+          { path: "notifications", element: <NotificationCenterPage /> },
         ],
       },
       {

@@ -50,58 +50,13 @@ export function QuestionPoolListPage() {
   const pools = data?.data || [];
   const totalPages = data?.meta?.totalPages || 1;
 
-  const renderStatusBadge = (isActive: boolean) => {
-    const activeClasses = isActive
-      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-      : "bg-rose-100 text-rose-800 border-rose-200";
-    const label = isActive ? "Active" : "Inactive";
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${activeClasses}`}
-      >
-        {label}
-      </span>
-    );
-  };
-
-  const renderTableRow = (pool: QuestionPool) => (
-    <tr key={pool.id} className="hover:bg-slate-50/80 transition-colors group">
-      <td className="px-6 py-4 font-medium text-slate-900">{pool.name}</td>
-      <td className="px-6 py-4 text-slate-500">{pool.description || "—"}</td>
-      <td className="px-6 py-4">{renderStatusBadge(pool.isActive)}</td>
-      <td className="px-6 py-4 text-right">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-primary-600 hover:text-primary-700 opacity-0 group-hover:opacity-100 tracking-wide transition-opacity"
-          onClick={() => navigate(`/dashboard/questions/${pool.id}`)}
-        >
-          View Questions
-        </Button>
-      </td>
-    </tr>
-  );
-
-  const renderTableRows = () => {
-    if (pools.length === 0) {
-      return (
-        <tr>
-          <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-            No question pools found. Click &quot;Create Pool&quot; to add one.
-          </td>
-        </tr>
-      );
-    }
-    return pools.map(renderTableRow);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-main">Question Pools</h1>
+          <h1 className="text-2xl font-bold text-text-main">Question Banks</h1>
           <p className="text-text-muted mt-1">
-            Manage banks of questions categorized by topic and department.
+            Manage pools of questions organized by department and topic.
           </p>
         </div>
         <div className="flex gap-2">
@@ -110,7 +65,7 @@ export function QuestionPoolListPage() {
               Clear Filter
             </Button>
           )}
-          <Button onClick={() => setIsModalOpen(true)}>Create Pool</Button>
+          <Button onClick={() => setIsModalOpen(true)}>+ Create Pool</Button>
         </div>
       </div>
 
@@ -127,55 +82,118 @@ export function QuestionPoolListPage() {
       )}
 
       {!isLoading && !isError && data && (
-        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden">
-          <table className="w-full text-left text-sm text-slate-700">
-            <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200">
-              <tr>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Name
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Description
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-4 font-semibold text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {renderTableRows()}
-            </tbody>
-          </table>
-
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-500">
-              Page {page} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              >
-                Next
+        <>
+          {pools.length === 0 ? (
+            <div className="card p-16 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <p className="font-bold text-slate-600 text-lg mb-1">
+                No question pools yet
+              </p>
+              <p className="text-sm text-slate-500 mb-6">
+                Create your first pool to start building a question bank.
+              </p>
+              <Button onClick={() => setIsModalOpen(true)}>
+                + Create First Pool
               </Button>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pools.map((pool: QuestionPool) => (
+                <div
+                  key={pool.id}
+                  onClick={() => navigate(`/dashboard/questions/${pool.id}`)}
+                  className="card p-6 hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer group relative overflow-hidden"
+                >
+                  {/* Active indicator */}
+                  <div
+                    className={`absolute top-0 left-0 w-1 h-full ${pool.isActive ? "bg-emerald-500" : "bg-slate-300"}`}
+                  />
+
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
+                      {pool.name}
+                    </h3>
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${pool.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500 border border-slate-200"}`}
+                    >
+                      {pool.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-500 mb-4 line-clamp-2 min-h-10">
+                    {pool.description || "No description provided."}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <div className="flex items-center gap-1.5">
+                      <svg
+                        className="w-4 h-4 text-slate-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-bold text-slate-600">
+                        {pool._count?.questions ?? "—"} questions
+                      </span>
+                    </div>
+                    {pool.isShared && (
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        Shared
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {pools.length > 0 && (
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm font-medium text-slate-500">
+                Page {page} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {isModalOpen && (

@@ -5,11 +5,13 @@ import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 
 interface CandidateEnrollmentModalProps {
+  institutionId: string;
   examId: string;
   onClose: () => void;
 }
 
 export function CandidateEnrollmentModal({
+  institutionId,
   examId,
   onClose,
 }: CandidateEnrollmentModalProps) {
@@ -41,6 +43,7 @@ export function CandidateEnrollmentModal({
     setError(null);
     try {
       await enrollCandidate({
+        institutionId,
         examId,
         candidateId: searchData.data.id,
       }).unwrap();

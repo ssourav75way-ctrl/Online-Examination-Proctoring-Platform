@@ -155,8 +155,62 @@ export const examApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Exam"],
     }),
+
+    getMyEnrollment: builder.query<
+      { data: Enrollment | null },
+      { institutionId: string; examId: string }
+    >({
+      query: ({ institutionId, examId }) =>
+        `/institutions/${institutionId}/exams/${examId}/my-enrollment`,
+    }),
+
+    getExamQuestions: builder.query<
+      { data: ExamQuestionItem[] },
+      { institutionId: string; examId: string }
+    >({
+      query: ({ institutionId, examId }) =>
+        `/institutions/${institutionId}/exams/${examId}/questions`,
+      providesTags: ["ExamQuestion"],
+    }),
+
+    addQuestionsToExam: builder.mutation<
+      { data: { added: number } },
+      { institutionId: string; examId: string; questionIds: string[] }
+    >({
+      query: ({ institutionId, examId, questionIds }) => ({
+        url: `/institutions/${institutionId}/exams/${examId}/questions`,
+        method: "POST",
+        body: { questionIds },
+      }),
+      invalidatesTags: ["ExamQuestion", "Exam"],
+    }),
+
+    removeExamQuestion: builder.mutation<
+      void,
+      { institutionId: string; examId: string; examQuestionId: string }
+    >({
+      query: ({ institutionId, examId, examQuestionId }) => ({
+        url: `/institutions/${institutionId}/exams/${examId}/questions/${examQuestionId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ExamQuestion", "Exam"],
+    }),
   }),
 });
+
+export interface ExamQuestionItem {
+  id: string;
+  questionId: string;
+  orderIndex: number;
+  question: { id: string; topic: string; type: string };
+  questionVersion: {
+    id: string;
+    content: string;
+    difficulty: number;
+    marks: number;
+    versionNumber: number;
+  };
+}
 
 export const {
   useGetExamsByInstitutionQuery,
@@ -168,4 +222,8 @@ export const {
   useEnrollCandidateMutation,
   useGetEnrollmentsQuery,
   useUpdateExamMutation,
+  useGetMyEnrollmentQuery,
+  useGetExamQuestionsQuery,
+  useAddQuestionsToExamMutation,
+  useRemoveExamQuestionMutation,
 } = examApi;

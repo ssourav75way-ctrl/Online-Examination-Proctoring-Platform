@@ -7,12 +7,7 @@ import {
 import { Button } from "@/components/common/Button";
 import { CONSTANTS } from "@/constants";
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-};
+import { formatDateIST as formatDate } from "@/utils/dateFormat";
 
 const flagTypeLabels: Record<string, string> = {
   NO_FACE: "No Face Detected",

@@ -120,6 +120,10 @@ export class ResultService {
           type: "RESULT_PUBLISHED" as const,
           title: "Exam Results Published",
           message: `Results for "${exam.title}" are now available.`,
+          metadata: {
+            examId,
+            examTitle: exam.title,
+          },
         })),
       });
     });

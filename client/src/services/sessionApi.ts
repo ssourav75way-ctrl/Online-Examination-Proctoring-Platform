@@ -3,8 +3,13 @@ import { ExamSession } from "@/types/exam";
 
 interface SessionStatus {
   session: ExamSession;
-  remainingSeconds: number;
-  serverTime: string;
+  timerState: {
+    remainingSeconds: number;
+    isExpired: boolean;
+    isPaused: boolean;
+    serverDeadline: string;
+    totalPausedSeconds: number;
+  };
 }
 
 interface AnswerResult {

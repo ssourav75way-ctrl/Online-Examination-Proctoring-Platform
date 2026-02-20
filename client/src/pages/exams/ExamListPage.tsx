@@ -13,12 +13,7 @@ type RootState = {
   };
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-};
+import { formatDateIST } from "@/utils/dateFormat";
 
 const statusBadgeMap: Record<string, { label: string; classes: string }> = {
   DRAFT: {
@@ -96,7 +91,7 @@ export function ExamListPage() {
     <tr key={exam.id} className="hover:bg-slate-50/80 transition-colors group">
       <td className="px-6 py-4 font-bold text-slate-900">{exam.title}</td>
       <td className="px-6 py-4 font-medium text-slate-600">
-        {formatDate(exam.scheduledStartTime)}
+        {formatDateIST(exam.scheduledStartTime)}
       </td>
       <td className="px-6 py-4 font-mono text-xs text-slate-500">
         {exam.durationMinutes} min
@@ -106,10 +101,16 @@ export function ExamListPage() {
         {isCandidate ? (
           <Button
             size="sm"
-            disabled={exam.status !== "IN_PROGRESS"}
+            disabled={
+              exam.status !== "SCHEDULED" && exam.status !== "IN_PROGRESS"
+            }
             onClick={() => navigate(`/dashboard/live/${exam.id}`)}
           >
-            {exam.status === "IN_PROGRESS" ? "Join Exam" : "Unavailable"}
+            {exam.status === "IN_PROGRESS"
+              ? "Resume Exam"
+              : exam.status === "SCHEDULED"
+                ? "Start Exam"
+                : "Unavailable"}
           </Button>
         ) : (
           <Button

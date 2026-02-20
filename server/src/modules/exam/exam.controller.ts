@@ -10,7 +10,13 @@ import { ExamStatus } from "@prisma/client";
 export class ExamController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const exam = await examService.create(req.body, req.user!.userId);
+      const exam = await examService.create(
+        {
+          ...req.body,
+          institutionId: req.params.institutionId as string,
+        },
+        req.user!.userId,
+      );
       sendCreated(res, exam);
     } catch (error) {
       next(error);
@@ -164,6 +170,69 @@ export class ExamController {
     try {
       const exam = await examService.update(req.params.id as string, req.body);
       sendSuccess(res, exam, "Exam updated");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMyEnrollment(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const enrollment = await examService.getMyEnrollment(
+        req.params.id as string,
+        req.user!.userId,
+      );
+      sendSuccess(res, enrollment);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addQuestions(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await examService.addQuestionsToExam(
+        req.params.id as string,
+        req.body.questionIds as string[],
+      );
+      sendSuccess(res, result, `${result.added} question(s) added to exam`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getExamQuestions(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const questions = await examService.getExamQuestions(
+        req.params.id as string,
+      );
+      sendSuccess(res, questions);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async removeQuestion(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      await examService.removeQuestionFromExam(
+        req.params.id as string,
+        req.params.examQuestionId as string,
+      );
+      sendSuccess(res, null, "Question removed from exam");
     } catch (error) {
       next(error);
     }

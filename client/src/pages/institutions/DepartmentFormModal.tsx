@@ -31,7 +31,7 @@ export function DepartmentFormModal({
     handleSubmit,
     formState: { errors },
   } = useForm<DepartmentFormData>({
-    resolver: yupResolver(departmentSchema),
+    resolver: yupResolver(departmentSchema) as any,
     mode: "onTouched",
   });
 

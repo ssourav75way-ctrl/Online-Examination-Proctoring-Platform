@@ -1,15 +1,17 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { logout } from "@/store/slices/authSlice";
 import { CONSTANTS } from "@/constants";
 import { ROLE_NAVIGATION_MAP } from "@/constants/navigation";
+import { useGetUnreadCountQuery } from "@/services/notificationApi";
 
 /**
  * Main Application Layout for authenticated users.
  * Implements clean sidebar and top navigation.
  */
 export default function AppLayout() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
   const effectiveRole = useSelector(
@@ -24,6 +26,14 @@ export default function AppLayout() {
   const userRole = effectiveRole || String(user?.globalRole || "");
   const navItems =
     ROLE_NAVIGATION_MAP[userRole] || ROLE_NAVIGATION_MAP["CANDIDATE"];
+
+  const { data: unreadData } = useGetUnreadCountQuery(undefined, {
+    pollingInterval: CONSTANTS.POLLING_INTERVAL_MS,
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true,
+  });
+
+  const unreadCount = unreadData?.data.unreadCount ?? 0;
 
   return (
     <div className="flex h-screen bg-background">
@@ -88,6 +98,31 @@ export default function AppLayout() {
                 {user?.email}
               </span>
             </div>
+            <div className="h-8 w-px bg-border"></div>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/notifications")}
+              className="relative inline-flex items-center justify-center h-9 w-9 rounded-full border border-border bg-surface hover:bg-primary-50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              <svg
+                className="w-4 h-4 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.8}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 min-w-[1.25rem] h-4 rounded-full bg-primary-600 text-[0.65rem] font-bold text-white shadow-sm">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
             <div className="h-8 w-px bg-border"></div>
             <button
               onClick={handleLogout}

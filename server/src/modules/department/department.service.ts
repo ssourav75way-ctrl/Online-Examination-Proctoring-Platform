@@ -28,9 +28,15 @@ export class DepartmentService {
     });
   }
 
-  async getByInstitution(institutionId: string) {
+  // Fetch departments by institution, optionally filtered by authorized IDs
+  async getByInstitution(institutionId: string, departmentIds?: string[]) {
+    const where: any = { institutionId };
+    if (departmentIds) {
+      where.id = { in: departmentIds };
+    }
+
     return prisma.department.findMany({
-      where: { institutionId },
+      where,
       include: {
         questionPools: { select: { id: true, name: true, isShared: true } },
         _count: { select: { questionPools: true } },

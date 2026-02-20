@@ -60,7 +60,9 @@ export class ExamService {
 
     let orderIdx = 0;
 
-    for (const selection of input.questionSelections) {
+    const selections = input.questionSelections || [];
+
+    for (const selection of selections) {
       const pool = await prisma.questionPool.findUnique({
         where: { id: selection.poolId },
       });
@@ -325,7 +327,11 @@ export class ExamService {
         type: "EXAM_RESCHEDULE" as const,
         title: "Exam Schedule Conflict",
         message: `Exam "${exam.title}" has been rescheduled and now conflicts with "${conflict.conflictingExamTitle}" at ${conflict.conflictingInstitution}`,
-        metadata: JSON.parse(JSON.stringify(conflict)),
+        metadata: {
+          ...JSON.parse(JSON.stringify(conflict)),
+          examId,
+          examTitle: exam.title,
+        },
       }));
 
       await prisma.notification.createMany({ data: notifications });
@@ -524,6 +530,133 @@ export class ExamService {
       where: { id: examId },
       data: updateData,
     });
+  }
+
+  async getMyEnrollment(examId: string, candidateId: string) {
+    const enrollment = await prisma.examEnrollment.findFirst({
+      where: { examId, candidateId },
+      orderBy: { attemptNumber: "desc" },
+      include: {
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            durationMinutes: true,
+            scheduledStartTime: true,
+            scheduledEndTime: true,
+          },
+        },
+        session: {
+          select: {
+            id: true,
+            startedAt: true,
+            finishedAt: true,
+            isLocked: true,
+          },
+        },
+      },
+    });
+
+    return enrollment;
+  }
+
+  async addQuestionsToExam(examId: string, questionIds: string[]) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: { questions: true },
+    });
+    if (!exam) throw new NotFoundError("Exam not found");
+    if (
+      exam.status !== ExamStatus.DRAFT &&
+      exam.status !== ExamStatus.SCHEDULED
+    ) {
+      throw new BadRequestError(
+        "Can only add questions to DRAFT or SCHEDULED exams",
+      );
+    }
+
+    // Get existing max orderIndex
+    const maxOrder = exam.questions.reduce(
+      (max, q) => Math.max(max, q.orderIndex),
+      -1,
+    );
+
+    const newExamQuestions: {
+      examId: string;
+      questionId: string;
+      questionVersionId: string;
+      poolId: string;
+      orderIndex: number;
+    }[] = [];
+
+    for (let i = 0; i < questionIds.length; i++) {
+      const question = await prisma.question.findUnique({
+        where: { id: questionIds[i] },
+        include: {
+          versions: { orderBy: { versionNumber: "desc" }, take: 1 },
+        },
+      });
+      if (!question)
+        throw new NotFoundError(`Question ${questionIds[i]} not found`);
+      if (!question.versions[0])
+        throw new BadRequestError(`Question ${questionIds[i]} has no versions`);
+
+      // Skip duplicates
+      const alreadyAdded = exam.questions.some(
+        (eq) => eq.questionId === questionIds[i],
+      );
+      if (alreadyAdded) continue;
+
+      newExamQuestions.push({
+        examId,
+        questionId: questionIds[i],
+        questionVersionId: question.versions[0].id,
+        poolId: question.poolId,
+        orderIndex: maxOrder + 1 + i,
+      });
+    }
+
+    if (newExamQuestions.length === 0) {
+      return { added: 0 };
+    }
+
+    await prisma.examQuestion.createMany({ data: newExamQuestions });
+
+    return { added: newExamQuestions.length };
+  }
+
+  async getExamQuestions(examId: string) {
+    return prisma.examQuestion.findMany({
+      where: { examId },
+      orderBy: { orderIndex: "asc" },
+      include: {
+        question: { select: { id: true, topic: true, type: true } },
+        questionVersion: {
+          select: {
+            id: true,
+            content: true,
+            difficulty: true,
+            marks: true,
+            versionNumber: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeQuestionFromExam(examId: string, examQuestionId: string) {
+    const exam = await prisma.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new NotFoundError("Exam not found");
+    if (
+      exam.status !== ExamStatus.DRAFT &&
+      exam.status !== ExamStatus.SCHEDULED
+    ) {
+      throw new BadRequestError(
+        "Can only remove questions from DRAFT or SCHEDULED exams",
+      );
+    }
+    return prisma.examQuestion.delete({ where: { id: examQuestionId } });
   }
 }
 

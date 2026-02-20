@@ -44,9 +44,12 @@ export interface Exam {
   scheduledStartTime: string;
   scheduledEndTime: string;
   durationMinutes: number;
-  status: "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED"|"IN_PROGRESS";
-  strictTimeWindow: boolean;
+  status: "DRAFT" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  isAdaptive: boolean;
+  maxAttempts: number;
   cooldownHours: number;
+  totalMarks: number;
+  passingScore: number;
   createdAt: string;
 }
 

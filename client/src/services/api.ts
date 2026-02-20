@@ -13,6 +13,7 @@ export const apiSlice = createApi({
     "Question",
     "QuestionPool",
     "Exam",
+    "ExamQuestion",
     "ExamSession",
     "Result",
     "Institution",

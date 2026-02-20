@@ -13,7 +13,6 @@ export default function DepartmentListPage() {
   const {
     data: departmentResponse,
     isLoading,
-    error,
     refetch,
   } = useGetDepartmentsQuery(institutionId || "", { skip: !institutionId });
 

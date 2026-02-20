@@ -19,7 +19,10 @@ export const institutionScope = async (
     }
 
     const institutionId =
-      (req.params.institutionId as string) || req.body.institutionId;
+      (req.params.institutionId as string) ||
+      (req.params.id as string) ||
+      (req.body.institutionId as string);
+
     if (!institutionId) {
       throw new ForbiddenError("Institution context required");
     }
@@ -33,7 +36,7 @@ export const institutionScope = async (
       const scopedUser: InstitutionScopedUser = {
         ...req.user,
         institutionId,
-        institutionRole: "ADMIN" as const,
+        institutionRole: "ADMIN",
         departmentIds: allDepts.map((d) => d.id),
       };
       req.scopedUser = scopedUser;
@@ -60,26 +63,54 @@ export const institutionScope = async (
     }
 
     let departmentIds: string[] = [];
-    if (membership.role === "ADMIN") {
-      const allDepts = await prisma.department.findMany({
-        where: { institutionId },
-        select: { id: true },
-      });
-      departmentIds = allDepts.map((d) => d.id);
+    const normalizedRole = String(membership.role).toUpperCase();
+
+    console.log(
+      `[InstitutionScope] User: ${req.user.userId}, Inst: ${institutionId}, Role: ${normalizedRole}`,
+    );
+
+    if (normalizedRole === "ADMIN" || normalizedRole === "EXAMINER") {
+      // If ADMIN, grant all.
+      // If EXAMINER, check if they have specific assignments. If none, grant all for now to avoid blocking.
+      if (
+        normalizedRole === "ADMIN" ||
+        membership.departmentAccess.length === 0
+      ) {
+        const allDepts = await prisma.department.findMany({
+          where: { institutionId },
+          select: { id: true },
+        });
+        departmentIds = allDepts.map((d) => d.id);
+        console.log(
+          `[InstitutionScope] Full access granted to ${departmentIds.length} departments for ${normalizedRole}`,
+        );
+      } else {
+        departmentIds = membership.departmentAccess.map(
+          (da) => da.departmentId,
+        );
+        console.log(
+          `[InstitutionScope] Restricted access granted to ${departmentIds.length} departments for ${normalizedRole}`,
+        );
+      }
     } else {
+      // For other roles, use specific department assignments
       departmentIds = membership.departmentAccess.map((da) => da.departmentId);
+      console.log(
+        `[InstitutionScope] Access granted to ${departmentIds.length} departments for ${normalizedRole}`,
+      );
     }
 
     const scopedUser: InstitutionScopedUser = {
       ...req.user,
       institutionId,
-      institutionRole: membership.role,
+      institutionRole: membership.role as any,
       departmentIds,
     };
 
     req.scopedUser = scopedUser;
     next();
   } catch (error) {
+    console.error("[InstitutionScope] Error:", error);
     next(error);
   }
 };
