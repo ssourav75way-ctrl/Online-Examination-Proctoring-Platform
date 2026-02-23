@@ -4,6 +4,7 @@ import { RootState } from "@/store";
 import { useGetExamsByInstitutionQuery } from "@/services/examApi";
 import { Button } from "@/components/common/Button";
 import { formatDateIST } from "@/utils/dateFormat";
+import { Exam } from "@/types/exam";
 
 export default function ExaminerResultsDashboard() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function ExaminerResultsDashboard() {
 
   const exams = data?.data || [];
   const completedExams = exams.filter(
-    (ex: any) =>
+    (ex: Exam) =>
       ex.status === "COMPLETED" ||
       ex.status === "IN_PROGRESS" ||
       ex.status === "SCHEDULED",
@@ -65,7 +66,7 @@ export default function ExaminerResultsDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {completedExams.map((exam: any) => (
+                {completedExams.map((exam: Exam) => (
                   <tr
                     key={exam.id}
                     className="hover:bg-slate-50 transition-colors"

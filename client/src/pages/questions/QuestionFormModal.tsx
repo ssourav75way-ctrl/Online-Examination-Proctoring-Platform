@@ -1,4 +1,4 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Resolver } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button } from "@/components/common/Button";
@@ -81,7 +81,9 @@ export function QuestionFormModal({
     setValue,
     formState: { errors },
   } = useForm<BaseQuestionFormData>({
-    resolver: yupResolver(questionSchema) as any,
+    resolver: yupResolver(
+      questionSchema,
+    ) as unknown as Resolver<BaseQuestionFormData>,
     defaultValues: {
       type: "MCQ",
       difficulty: 1,

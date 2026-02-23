@@ -1,6 +1,6 @@
 import { apiSlice } from "./api";
 
-interface ExamResult {
+export interface ExamResult {
   id: string;
   enrollmentId: string;
   totalScore: number;
@@ -21,10 +21,40 @@ interface ExamResult {
       email: string;
     };
     attemptNumber: number;
+    exam?: {
+      id: string;
+      title: string;
+    };
   };
 }
 
-interface ReEvaluationRequest {
+export interface CandidateAnswerDetail {
+  id: string;
+  examQuestionId: string;
+  answerContent: string | null;
+  codeSubmission: string | null;
+  finalScore: number | null;
+  manualScore: number | null;
+  autoScore: number | null;
+  examQuestion: {
+    questionVersion: {
+      id: string;
+      content: string;
+      type: string;
+      topic: string;
+      marks: number;
+      options: Array<{ id: string; text: string }> | null;
+    };
+  };
+  reEvaluationRequests?: ReEvaluationRequest[];
+}
+
+export interface CandidateResultResponse extends ExamResult {
+  canChallenge: boolean;
+  answers: CandidateAnswerDetail[];
+}
+
+export interface ReEvaluationRequest {
   id: string;
   resultId: string;
   candidateAnswerId: string;
@@ -40,7 +70,6 @@ interface ReEvaluationRequest {
 
 export const resultApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    
     generateResults: builder.mutation<
       { data: ExamResult[] },
       { examId: string }
@@ -52,7 +81,6 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    
     publishResults: builder.mutation<{ data: null }, { examId: string }>({
       query: ({ examId }) => ({
         url: `/results/exams/${examId}/publish`,
@@ -61,7 +89,6 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    
     getExamResults: builder.query<
       {
         data: ExamResult[];
@@ -81,22 +108,19 @@ export const resultApi = apiSlice.injectEndpoints({
       providesTags: ["Result"],
     }),
 
-    
     getCandidateResult: builder.query<
-      { data: ExamResult },
+      { data: CandidateResultResponse },
       { enrollmentId: string }
     >({
       query: ({ enrollmentId }) => `/results/enrollments/${enrollmentId}`,
       providesTags: ["Result"],
     }),
 
-    
     getMyResults: builder.query<{ data: ExamResult[] }, void>({
       query: () => "/results/my-results",
       providesTags: ["Result"],
     }),
 
-    
     fileReEvaluation: builder.mutation<
       { data: ReEvaluationRequest },
       { resultId: string; candidateAnswerId: string; justification: string }
@@ -109,7 +133,6 @@ export const resultApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Result"],
     }),
 
-    
     getReEvaluationRequests: builder.query<
       {
         data: ReEvaluationRequest[];
@@ -129,7 +152,6 @@ export const resultApi = apiSlice.injectEndpoints({
       providesTags: ["Result"],
     }),
 
-    
     processReEvaluation: builder.mutation<
       { data: ReEvaluationRequest },
       {

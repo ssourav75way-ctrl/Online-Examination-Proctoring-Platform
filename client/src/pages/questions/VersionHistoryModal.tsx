@@ -5,6 +5,7 @@ import {
 import { Button } from "@/components/common/Button";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
+import { QuestionVersion } from "@/types/exam";
 
 interface VersionHistoryModalProps {
   institutionId: string;
@@ -76,7 +77,7 @@ export function VersionHistoryModal({
 
           {!isLoading &&
             !isError &&
-            versions.map((v: any, index: number) => (
+            versions.map((v: QuestionVersion, index: number) => (
               <div
                 key={v.id}
                 className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:border-primary-200 transition-colors"

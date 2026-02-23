@@ -1,10 +1,24 @@
-import { useGetMyResultsQuery } from "@/services/resultApi";
+import { useState } from "react";
+import { useGetMyResultsQuery, ExamResult } from "@/services/resultApi";
 import { Button } from "@/components/common/Button";
+import { CandidateResultDetail } from "./CandidateResultDetail";
 
 export function ResultsHistoryPage() {
   const { data, isLoading, isError } = useGetMyResultsQuery();
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<
+    string | null
+  >(null);
 
   const results = data?.data || [];
+
+  if (selectedEnrollmentId) {
+    return (
+      <CandidateResultDetail
+        enrollmentId={selectedEnrollmentId}
+        onBack={() => setSelectedEnrollmentId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -36,37 +50,45 @@ export function ResultsHistoryPage() {
               No results found. Complete an exam to see your scores here.
             </div>
           ) : (
-            results.map((result: any) => (
+            results.map((result: ExamResult) => (
               <div
                 key={result.id}
-                className="card p-6 border border-border/60 hover:shadow-md transition-all"
+                className="card p-6 border border-border/60 hover:shadow-md transition-all flex flex-col justify-between"
               >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="font-bold text-lg text-text-main">
-                    {result.enrollment?.exam?.title || "Exam Result"}
-                  </h3>
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-bold ${result.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                  >
-                    {result.percentage}%
-                  </span>
-                </div>
-                <div className="space-y-2 text-sm text-text-muted">
-                  <p>
-                    Score: {result.totalScore} / {result.maxScore}
-                  </p>
-                  <p>
-                    Completed: {new Date(result.createdAt).toLocaleDateString()}
-                  </p>
-                  <p>
-                    Status:{" "}
-                    <span className="capitalize">
-                      {result.status?.replace("_", " ").toLowerCase()}
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-lg text-text-main">
+                      {result.enrollment?.exam?.title || "Exam Result"}
+                    </h3>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-bold ${result.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                    >
+                      {result.percentage}%
                     </span>
-                  </p>
+                  </div>
+                  <div className="space-y-2 text-sm text-text-muted">
+                    <p>
+                      Score: {result.totalScore} / {result.maxScore}
+                    </p>
+                    <p>
+                      Completed:{" "}
+                      {new Date(result.createdAt).toLocaleDateString()}
+                    </p>
+                    <p>
+                      Status:{" "}
+                      <span className="capitalize">
+                        {result.status?.replace("_", " ").toLowerCase()}
+                      </span>
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-6">
-                  <Button variant="secondary" size="sm" className="w-full">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setSelectedEnrollmentId(result.enrollmentId)}
+                  >
                     View Detailed Report
                   </Button>
                 </div>

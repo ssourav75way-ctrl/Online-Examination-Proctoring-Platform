@@ -5,6 +5,9 @@ import {
   useGetQuestionsByPoolQuery,
 } from "@/services/questionApi";
 import { useAddQuestionsToExamMutation } from "@/services/examApi";
+import { QuestionPool } from "@/services/questionApi";
+import { Question } from "@/types/exam";
+import { ApiError } from "@/types/common";
 
 interface ExamQuestionPickerProps {
   institutionId: string;
@@ -71,7 +74,7 @@ export function ExamQuestionPicker({
   };
 
   const selectAll = () => {
-    const ids = questions.map((q: any) => q.id);
+    const ids = questions.map((q: Question) => q.id);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       ids.forEach((id: string) => next.add(id));
@@ -89,9 +92,10 @@ export function ExamQuestionPicker({
         questionIds: [...selectedIds],
       }).unwrap();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as ApiError;
       setApiError(
-        err?.data?.message || "Failed to add questions. Please try again.",
+        error?.data?.message || "Failed to add questions. Please try again.",
       );
     }
   };
@@ -113,9 +117,7 @@ export function ExamQuestionPicker({
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text-main text-xl"
-          >
-            
-          </button>
+          ></button>
         </div>
 
         {}
@@ -135,7 +137,7 @@ export function ExamQuestionPicker({
                   No pools found. Create a pool first.
                 </p>
               ) : (
-                pools.map((pool: any) => (
+                pools.map((pool: QuestionPool) => (
                   <button
                     key={pool.id}
                     onClick={() => setSelectedPoolId(pool.id)}
@@ -159,7 +161,7 @@ export function ExamQuestionPicker({
           <div className="flex-1 overflow-y-auto p-4">
             {!selectedPoolId ? (
               <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-                 Select a pool to browse questions
+                Select a pool to browse questions
               </div>
             ) : questionsLoading ? (
               <div className="flex justify-center py-12">
@@ -181,9 +183,8 @@ export function ExamQuestionPicker({
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  {questions.map((q: any) => {
-                    const v =
-                      q.versions?.[0] || q.latestVersion || q.currentVersion;
+                  {questions.map((q: Question) => {
+                    const v = q.latestVersion;
                     const badge = typeBadge[q.type] || typeBadge["MCQ"];
                     const isSelected = selectedIds.has(q.id);
                     return (

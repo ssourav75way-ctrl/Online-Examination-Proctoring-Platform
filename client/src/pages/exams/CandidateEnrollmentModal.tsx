@@ -4,6 +4,8 @@ import { useEnrollCandidateMutation } from "@/services/examApi";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 
+import { ApiError } from "@/types/common";
+
 interface CandidateEnrollmentModalProps {
   institutionId: string;
   examId: string;
@@ -48,8 +50,9 @@ export function CandidateEnrollmentModal({
         candidateId: searchData.data.id,
       }).unwrap();
       onClose();
-    } catch (err: any) {
-      setError(err?.data?.message || "Failed to enroll candidate.");
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr?.data?.message || "Failed to enroll candidate.");
     }
   };
 
@@ -61,9 +64,7 @@ export function CandidateEnrollmentModal({
           <button
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
-          >
-            
-          </button>
+          ></button>
         </div>
 
         <form onSubmit={handleSearch} className="space-y-4">

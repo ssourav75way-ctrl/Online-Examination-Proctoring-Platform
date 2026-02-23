@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import * as yup from "yup";
 import { CONSTANTS } from "@/constants";
 import { Input } from "@/components/common/Input";
@@ -31,7 +31,9 @@ export function DepartmentFormModal({
     handleSubmit,
     formState: { errors },
   } = useForm<DepartmentFormData>({
-    resolver: yupResolver(departmentSchema) as any,
+    resolver: yupResolver(
+      departmentSchema,
+    ) as unknown as Resolver<DepartmentFormData>,
     mode: "onTouched",
   });
 
@@ -68,9 +70,7 @@ export function DepartmentFormModal({
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
             aria-label="Close"
-          >
-            
-          </button>
+          ></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

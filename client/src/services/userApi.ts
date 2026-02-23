@@ -6,6 +6,8 @@ export interface UserSummary {
   firstName: string;
   lastName: string;
   globalRole: string;
+  highContrastMode?: boolean;
+  screenReaderEnabled?: boolean;
 }
 
 export const userApi = apiSlice.injectEndpoints({
@@ -18,7 +20,7 @@ export const userApi = apiSlice.injectEndpoints({
       providesTags: ["User"],
     }),
     updateProfile: builder.mutation<
-      { data: any },
+      { data: UserSummary },
       {
         firstName?: string;
         lastName?: string;

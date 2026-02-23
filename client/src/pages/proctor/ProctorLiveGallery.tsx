@@ -1,4 +1,4 @@
-import { useGetActiveSessionsQuery } from "@/services/proctorApi";
+import { useGetActiveSessionsQuery, LiveSession } from "@/services/proctorApi";
 import { format } from "date-fns";
 
 interface ProctorLiveGalleryProps {
@@ -55,7 +55,7 @@ export function ProctorLiveGallery({ institutionId }: ProctorLiveGalleryProps) {
 
         {!isLoading &&
           !isError &&
-          sessions.map((session: any) => {
+          sessions.map((session: LiveSession) => {
             const snapshot = session.snapshots?.[0];
             const candidate = session.enrollment.candidate;
             const exam = session.enrollment.exam;

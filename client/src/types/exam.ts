@@ -1,4 +1,3 @@
-
 export type QuestionType =
   | "MCQ"
   | "MULTI_SELECT"
@@ -25,6 +24,11 @@ export interface QuestionVersion {
   codeTemplate: string | null;
   codeLanguage: string | null;
   createdAt: string;
+  createdBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface Question {

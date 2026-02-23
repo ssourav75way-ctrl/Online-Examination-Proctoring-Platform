@@ -197,7 +197,7 @@ export function ExamSessionPage() {
         setSelectedOptions([]);
         setCodeAnswer("");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to navigate to question:", err);
     }
   };
@@ -223,7 +223,7 @@ export function ExamSessionPage() {
       }
       setWebcamActive(true);
       setWebcamError(null);
-    } catch (err: any) {
+    } catch (err) {
       const error = err as { name?: string };
       const name = error?.name || "";
       if (name === "NotAllowedError")
@@ -273,7 +273,7 @@ export function ExamSessionPage() {
       setCurrentQuestion(q);
       setTimeLeft(timerState?.remainingSeconds || 3600);
       setPhase("in-progress");
-    } catch (err: any) {
+    } catch (err) {
       const error = err as ApiError;
       setErrorMsg(
         error?.data?.message ||
@@ -329,7 +329,7 @@ export function ExamSessionPage() {
           );
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       const error = err as ApiError;
       if (error?.data?.message?.includes("Time has expired")) {
         setPhase("finished");

@@ -8,6 +8,7 @@ import { Button } from "@/components/common/Button";
 import { useSelector } from "react-redux";
 import { QuestionFormModal } from "./QuestionFormModal";
 import { VersionHistoryModal } from "./VersionHistoryModal";
+import { Question } from "@/types/exam";
 
 const typeBadgeMap: Record<string, { label: string; classes: string }> = {
   MCQ: {
@@ -39,7 +40,6 @@ const difficultyColor = (d: number) => {
 };
 
 import { RootState } from "@/store";
-import { Question } from "@/types/exam";
 
 export function QuestionListPage() {
   const { poolId } = useParams<{ poolId: string }>();
@@ -245,9 +245,8 @@ export function QuestionListPage() {
                   </td>
                 </tr>
               ) : (
-                questions.map((q: any) => {
-                  const v =
-                    q.versions?.[0] || q.latestVersion || q.currentVersion;
+                questions.map((q: Question) => {
+                  const v = q.latestVersion;
                   const badge = typeBadgeMap[q.type] || typeBadgeMap["MCQ"];
                   const difficulty = v?.difficulty || 1;
                   const versionNumber = v?.versionNumber || 1;

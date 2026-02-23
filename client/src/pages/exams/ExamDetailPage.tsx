@@ -9,6 +9,7 @@ import {
   useRemoveExamQuestionMutation,
   ExamQuestionItem,
 } from "@/services/examApi";
+import { Enrollment } from "@/types/modules/exam.types";
 import { Button } from "@/components/common/Button";
 import { CandidateEnrollmentModal } from "./CandidateEnrollmentModal";
 import { ExamFormModal } from "./ExamFormModal";
@@ -196,7 +197,7 @@ export function ExamDetailPage() {
                   disabled={examQuestions.length === 0}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
-                   Publish / Schedule
+                  Publish / Schedule
                 </Button>
               </>
             )}
@@ -408,7 +409,7 @@ export function ExamDetailPage() {
                   </td>
                 </tr>
               ) : (
-                enrollments.map((enr: any) => (
+                enrollments.map((enr: Enrollment) => (
                   <tr key={enr.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium">
                       {enr.candidate?.firstName} {enr.candidate?.lastName}
