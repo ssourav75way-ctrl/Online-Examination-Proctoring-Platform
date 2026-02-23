@@ -8,6 +8,7 @@ import {
   ExamStatus,
   AccommodationType,
   NotificationType,
+  Prisma,
 } from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 import {
@@ -289,23 +290,14 @@ export class ExamService {
     });
 
     if (conflicts.length > 0) {
-      interface NotificationData {
-        recipientId: string;
-        type: NotificationType;
-        title: string;
-        message: string;
-        metadata: Record<string, any>;
-      }
-
-      const candidateNotifications: NotificationData[] = conflicts.map(
-        (conflict) => ({
+      const candidateNotifications: Prisma.NotificationCreateManyInput[] =
+        conflicts.map((conflict) => ({
           recipientId: conflict.candidateId,
           type: NotificationType.EXAM_RESCHEDULE,
           title: "Exam Schedule Conflict",
           message: `Your exam "${exam.title}" now conflicts with "${conflict.conflictingExamTitle}" at ${conflict.conflictingInstitution}.`,
-          metadata: { examId, examTitle: exam.title },
-        }),
-      );
+          metadata: { examId, examTitle: exam.title } as Prisma.JsonObject,
+        }));
 
       const currentInstAdmins = await prisma.institutionMember.findMany({
         where: { institutionId: exam.institutionId, role: "ADMIN" },
@@ -321,7 +313,7 @@ export class ExamService {
           members: { where: { role: "ADMIN" }, select: { userId: true } },
         },
       });
-      const adminNotifications: NotificationData[] = [];
+      const adminNotifications: Prisma.NotificationCreateManyInput[] = [];
 
       currentInstAdmins.forEach((admin) => {
         adminNotifications.push({
@@ -329,7 +321,10 @@ export class ExamService {
           type: NotificationType.EXAM_CONFLICT,
           title: "Schedule Conflict Detected",
           message: `Rescheduling "${exam.title}" caused conflicts for ${conflicts.length} candidates with other institutions.`,
-          metadata: { examId, conflictsCount: conflicts.length },
+          metadata: {
+            examId,
+            conflictsCount: conflicts.length,
+          } as Prisma.JsonObject,
         });
       });
 
@@ -347,7 +342,7 @@ export class ExamService {
               impactedCandidates: impactedCandidates.map(
                 (c) => c.candidateName,
               ),
-            },
+            } as Prisma.JsonObject,
           });
         });
       });
@@ -534,7 +529,7 @@ export class ExamService {
       );
     }
 
-    const updateData: Record<string, any> = {};
+    const updateData: Prisma.ExamUpdateInput = {};
     if (data.title) updateData.title = data.title;
     if (data.description !== undefined)
       updateData.description = data.description;

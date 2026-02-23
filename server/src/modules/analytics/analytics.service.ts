@@ -8,7 +8,6 @@ import {
 } from "../../types/grading.types";
 
 export class AnalyticsService {
-  
   async getQuestionDifficultyIndex(examQuestionId: string): Promise<number> {
     const answers = await prisma.candidateAnswer.findMany({
       where: { examQuestionId },
@@ -30,12 +29,10 @@ export class AnalyticsService {
     return correctCount / answers.length;
   }
 
-  
   async getDiscriminationIndex(
     examId: string,
     examQuestionId: string,
   ): Promise<number> {
-    
     const results = await prisma.examResult.findMany({
       where: { enrollment: { examId } },
       orderBy: { totalScore: "desc" },
@@ -47,7 +44,6 @@ export class AnalyticsService {
     const topGroup = results.slice(0, n27).map((r) => r.enrollmentId);
     const bottomGroup = results.slice(-n27).map((r) => r.enrollmentId);
 
-    
     const topAnswers = await prisma.candidateAnswer.findMany({
       where: {
         examQuestionId,
@@ -93,7 +89,6 @@ export class AnalyticsService {
     return topCorrectRate - bottomCorrectRate;
   }
 
-  
   async getDistractorAnalysis(
     examQuestionId: string,
   ): Promise<DistractorInfo[]> {
@@ -104,13 +99,8 @@ export class AnalyticsService {
 
     if (!examQuestion) throw new NotFoundError("Exam question not found");
 
-    interface OptionShape {
-      id: string;
-      text: string;
-      isCorrect: boolean;
-    }
     const options = examQuestion.questionVersion.options as
-      | OptionShape[]
+      | { id: string; text: string; isCorrect: boolean }[]
       | null;
     if (!options) return [];
 
@@ -126,7 +116,6 @@ export class AnalyticsService {
     for (const answer of answers) {
       if (answer.answerContent) {
         try {
-          
           const selected = answer.answerContent.startsWith("[")
             ? (JSON.parse(answer.answerContent) as string[])
             : [answer.answerContent];
@@ -154,7 +143,6 @@ export class AnalyticsService {
     }));
   }
 
-  
   async getExamAnalytics(examId: string): Promise<QuestionAnalytics[]> {
     const examQuestions = await prisma.examQuestion.findMany({
       where: { examId },
@@ -177,7 +165,6 @@ export class AnalyticsService {
           ? await this.getDistractorAnalysis(eq.id)
           : [];
 
-      
       let flagged = false;
       let flagReason: string | null = null;
 
@@ -208,7 +195,6 @@ export class AnalyticsService {
     return analytics;
   }
 
-  
   async getIntegrityReport(
     examId: string,
   ): Promise<CandidateIntegrityReport[]> {

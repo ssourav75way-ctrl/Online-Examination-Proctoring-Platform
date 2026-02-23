@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import { InstitutionRole } from "@prisma/client";
 import { ForbiddenError, UnauthorizedError } from "../utils/app-error";
 import prisma from "../config/database.config";
 import { InstitutionScopedUser } from "../types/auth.types";
-
 
 export const institutionScope = async (
   req: Request,
@@ -23,7 +23,6 @@ export const institutionScope = async (
       throw new ForbiddenError("Institution context required");
     }
 
-    
     if (req.user.globalRole === "SUPER_ADMIN") {
       const allDepts = await prisma.department.findMany({
         where: { institutionId },
@@ -66,8 +65,6 @@ export const institutionScope = async (
     );
 
     if (normalizedRole === "ADMIN" || normalizedRole === "EXAMINER") {
-      
-      
       if (
         normalizedRole === "ADMIN" ||
         membership.departmentAccess.length === 0
@@ -89,7 +86,6 @@ export const institutionScope = async (
         );
       }
     } else {
-      
       departmentIds = membership.departmentAccess.map((da) => da.departmentId);
       console.log(
         `[InstitutionScope] Access granted to ${departmentIds.length} departments for ${normalizedRole}`,
@@ -99,7 +95,7 @@ export const institutionScope = async (
     const scopedUser: InstitutionScopedUser = {
       ...req.user,
       institutionId,
-      institutionRole: membership.role as any,
+      institutionRole: membership.role as InstitutionRole,
       departmentIds,
     };
 

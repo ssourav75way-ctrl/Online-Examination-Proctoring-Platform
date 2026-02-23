@@ -5,15 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { codeExecConfig } from "../config";
 import { CodeExecutionResult, TestCaseResult } from "../types/exam.types";
 
-interface TestCaseInput {
-  id: string;
-  input: string;
-  expectedOutput: string;
-  isHidden: boolean;
-  timeoutMs: number;
-}
-
-
+import { TestCaseInput } from "../types/modules/code-executor.types";
 export class CodeExecutorService {
   private readonly tempDir: string;
 
@@ -34,14 +26,12 @@ export class CodeExecutorService {
     let compilationError: string | null = null;
 
     try {
-      
       const { filePath, command } = this.prepareExecution(
         execId,
         code,
         language,
       );
 
-      
       const compileResult = this.compileCode(filePath, language, execId);
       if (compileResult) {
         compilationError = compileResult;
@@ -55,7 +45,6 @@ export class CodeExecutorService {
         };
       }
 
-      
       for (const testCase of testCases) {
         const result = this.runTestCase(command, testCase, language);
         testResults.push(result);
@@ -72,12 +61,10 @@ export class CodeExecutorService {
         totalTests: testResults.length,
       };
     } finally {
-      
       this.cleanup(execId);
     }
   }
 
-  
   getVisibleResults(results: CodeExecutionResult): CodeExecutionResult {
     return {
       ...results,
@@ -154,7 +141,6 @@ export class CodeExecutorService {
   ): TestCaseResult {
     const startTime = Date.now();
 
-    
     const dangerousPatterns: Record<string, string[]> = {
       javascript: [
         "fs.",
@@ -188,13 +174,7 @@ export class CodeExecutorService {
       c: ["stdio.h", "stdlib.h", "unistd.h", "system(", "fork(", "exec"],
     };
 
-    
-    
-
     try {
-      
-      
-      
       const output = execSync(command, {
         input: testCase.input,
         timeout: Math.min(testCase.timeoutMs, codeExecConfig.timeoutMs),
@@ -202,10 +182,8 @@ export class CodeExecutorService {
         encoding: "utf-8",
         env: {
           NODE_ENV: "production",
-          PATH: process.env.PATH, 
-          
+          PATH: process.env.PATH,
         },
-        
       });
 
       const actualOutput = output.trim();
@@ -221,7 +199,13 @@ export class CodeExecutorService {
         executionTimeMs: Math.min(Date.now() - startTime, testCase.timeoutMs),
         error: null,
       };
-    } catch (error: any) {
+    } catch (e) {
+      const error = e as {
+        signal?: string;
+        status?: number;
+        message: string;
+        stderr?: string;
+      };
       let errorMessage = "Execution error";
       if (error.signal === "SIGTERM" || error.status === 124) {
         errorMessage = "Time Limit Exceeded";
@@ -253,9 +237,7 @@ export class CodeExecutorService {
         : join(this.tempDir, execId);
       try {
         unlinkSync(filePath);
-      } catch {
-        
-      }
+      } catch {}
     }
   }
 }

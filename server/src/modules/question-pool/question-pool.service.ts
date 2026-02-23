@@ -6,12 +6,7 @@ import {
 } from "../../utils/app-error";
 import { PaginationParams } from "../../utils/pagination.util";
 
-interface CreatePoolInput {
-  departmentId: string;
-  name: string;
-  description?: string;
-  isShared?: boolean;
-}
+import { CreatePoolInput } from "../../types/modules/question-pool.types";
 
 export class QuestionPoolService {
   async create(input: CreatePoolInput, departmentIds: string[]) {

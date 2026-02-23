@@ -4,16 +4,9 @@ import { FlagType, ReviewStatus } from "@prisma/client";
 import { proctoringConfig } from "../../config";
 import { PaginationParams } from "../../utils/pagination.util";
 
-interface UploadSnapshotInput {
-  sessionId: string;
-  imageUrl: string;
-  faceDetected: boolean;
-  multipleFaces: boolean;
-  candidateAbsent: boolean;
-}
+import { UploadSnapshotInput } from "../../types/modules/proctoring.types";
 
 export class ProctoringService {
-  
   async uploadSnapshot(input: UploadSnapshotInput) {
     const session = await prisma.examSession.findUnique({
       where: { id: input.sessionId },
@@ -30,7 +23,6 @@ export class ProctoringService {
       },
     });
 
-    
     const flags: {
       flagType: FlagType;
       description: string;
@@ -76,7 +68,6 @@ export class ProctoringService {
     return { snapshot, flags: createdFlags };
   }
 
-  
   async getPendingFlags(pagination: PaginationParams, institutionId?: string) {
     const where: Record<string, unknown> = {
       reviewStatus: ReviewStatus.PENDING,
@@ -116,7 +107,6 @@ export class ProctoringService {
     return { flags, total };
   }
 
-  
   async reviewFlag(
     flagId: string,
     reviewedById: string,
@@ -137,7 +127,6 @@ export class ProctoringService {
     });
   }
 
-  
   async getSessionSnapshots(sessionId: string, pagination: PaginationParams) {
     const [snapshots, total] = await Promise.all([
       prisma.proctorSnapshot.findMany({
@@ -155,7 +144,6 @@ export class ProctoringService {
     return { snapshots, total };
   }
 
-  
   async getSessionFlags(sessionId: string) {
     return prisma.proctorFlag.findMany({
       where: { sessionId },
@@ -167,7 +155,6 @@ export class ProctoringService {
     });
   }
 
-  
   async getActiveSessions(institutionId: string) {
     const sessions = await prisma.examSession.findMany({
       where: {

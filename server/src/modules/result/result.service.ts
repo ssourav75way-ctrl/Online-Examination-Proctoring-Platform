@@ -6,7 +6,6 @@ import { PaginationParams } from "../../utils/pagination.util";
 import { gradingService } from "../grading/grading.service";
 
 export class ResultService {
-  
   async generateResults(examId: string) {
     const enrollments = await prisma.examEnrollment.findMany({
       where: { examId, status: "COMPLETED" },
@@ -26,10 +25,8 @@ export class ResultService {
     for (const enrollment of enrollments) {
       if (!enrollment.session) continue;
 
-      
       await gradingService.autoGradeSession(enrollment.session.id);
 
-      
       const freshSession = await prisma.examSession.findUnique({
         where: { id: enrollment.session.id },
         include: { answers: { select: { finalScore: true } } },
@@ -37,7 +34,6 @@ export class ResultService {
 
       if (!freshSession) continue;
 
-      
       const existing = await prisma.examResult.findUnique({
         where: { enrollmentId: enrollment.id },
       });
@@ -55,7 +51,6 @@ export class ResultService {
         exam.totalMarks > 0 ? (totalScore / exam.totalMarks) * 100 : 0;
       const passed = totalScore >= exam.passingScore;
 
-      
       const proctorFlagCount = enrollment.session.flags.length;
       const proctorFlagSeveritySum = enrollment.session.flags.reduce(
         (s, f) => s + f.severity,
@@ -65,7 +60,6 @@ export class ResultService {
         (v) => v.type === "TAB_SWITCH",
       ).length;
 
-      
       const baseIntegrity = 100;
       const flagPenalty = proctorFlagSeveritySum * 5;
       const violationPenalty = timingAnomalyCount * 10;
@@ -93,7 +87,6 @@ export class ResultService {
     return results;
   }
 
-  
   async publishResults(examId: string) {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new NotFoundError("Exam not found");
@@ -115,7 +108,6 @@ export class ResultService {
         data: { resultStatus: ResultStatus.PUBLISHED },
       });
 
-      
       const enrollments = await tx.examEnrollment.findMany({
         where: { examId },
         select: { candidateId: true },
@@ -136,7 +128,6 @@ export class ResultService {
     });
   }
 
-  
   async getCandidateResult(enrollmentId: string, candidateId: string) {
     const result = await prisma.examResult.findUnique({
       where: { enrollmentId },
@@ -153,6 +144,33 @@ export class ResultService {
               },
             },
             candidate: { select: { id: true } },
+            session: {
+              include: {
+                answers: {
+                  include: {
+                    reEvalRequests: true,
+                    examQuestion: {
+                      include: {
+                        question: {
+                          select: {
+                            type: true,
+                            topic: true,
+                          },
+                        },
+                        questionVersion: {
+                          select: {
+                            id: true,
+                            content: true,
+                            options: true,
+                            marks: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -166,7 +184,6 @@ export class ResultService {
       throw new BadRequestError("Results not yet published");
     }
 
-    
     const canChallenge = result.publishedAt
       ? isWithinChallengeWindow(
           result.publishedAt,
@@ -174,14 +191,38 @@ export class ResultService {
         )
       : false;
 
+    const answers =
+      result.enrollment.session?.answers.map((answer) => {
+        const qv = answer.examQuestion.questionVersion;
+        const q = answer.examQuestion.question;
+        const options = Array.isArray(qv.options)
+          ? (qv.options as Array<{ id: string; text: string }>).map((opt) => ({
+              id: opt.id,
+              text: opt.text,
+            }))
+          : qv.options;
+
+        return {
+          ...answer,
+          examQuestion: {
+            ...answer.examQuestion,
+            questionVersion: {
+              ...qv,
+              type: q.type,
+              topic: q.topic,
+              options,
+            },
+          },
+        };
+      }) || [];
+
     return {
       ...result,
       canChallenge,
-      
+      answers,
     };
   }
 
-  
   async getMyResults(candidateId: string) {
     const results = await prisma.examResult.findMany({
       where: {
@@ -208,7 +249,6 @@ export class ResultService {
     return results;
   }
 
-  
   async fileReEvaluation(
     resultId: string,
     candidateAnswerId: string,
@@ -254,7 +294,6 @@ export class ResultService {
     });
   }
 
-  
   async processReEvaluation(
     requestId: string,
     reviewedById: string,
@@ -279,13 +318,11 @@ export class ResultService {
     if (status === ReEvalStatus.APPROVED && newScore !== undefined) {
       updateData.newScore = newScore;
 
-      
       await prisma.candidateAnswer.update({
         where: { id: request.candidateAnswerId },
         data: { manualScore: newScore, finalScore: newScore },
       });
 
-      
       const allAnswers = await prisma.candidateAnswer.findMany({
         where: { sessionId: request.candidateAnswer.sessionId },
       });
@@ -307,7 +344,6 @@ export class ResultService {
       });
     }
 
-    
     const enrollment = await prisma.examEnrollment.findFirst({
       where: { id: request.result.enrollmentId },
     });
@@ -329,7 +365,6 @@ export class ResultService {
     });
   }
 
-  
   async getExamResults(examId: string, pagination: PaginationParams) {
     const [results, total] = await Promise.all([
       prisma.examResult.findMany({
@@ -358,7 +393,6 @@ export class ResultService {
     return { results, total };
   }
 
-  
   async getReEvaluationRequests(examId: string, pagination: PaginationParams) {
     const [requests, total] = await Promise.all([
       prisma.reEvaluationRequest.findMany({

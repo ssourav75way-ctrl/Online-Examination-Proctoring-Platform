@@ -3,16 +3,9 @@ import { NotFoundError, BadRequestError } from "../../utils/app-error";
 import { AccommodationType, AccommodationAction } from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 
-interface CreateAccommodationInput {
-  candidateId: string;
-  type: AccommodationType;
-  reason: string;
-  validFrom: string;
-  validUntil?: string;
-}
+import { CreateAccommodationInput } from "../../types/modules/accommodation.types";
 
 export class AccommodationService {
-  
   async grant(input: CreateAccommodationInput, approvedById: string) {
     const candidate = await prisma.user.findUnique({
       where: { id: input.candidateId },
@@ -32,7 +25,6 @@ export class AccommodationService {
       },
     });
 
-    
     await prisma.accommodationAudit.create({
       data: {
         accommodationId: accommodation.id,

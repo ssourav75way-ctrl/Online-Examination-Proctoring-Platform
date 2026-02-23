@@ -11,11 +11,7 @@ import { proctoringConfig } from "../../config";
 import { AdaptiveState, QuestionDeliveryItem } from "../../types/exam.types";
 import { calculateRemainingSeconds } from "../../utils/date.util";
 
-interface SubmitAnswerInput {
-  examQuestionId: string;
-  answerContent?: string;
-  codeSubmission?: string;
-}
+import { SubmitAnswerInput } from "../../types/modules/exam-session.types";
 
 export class ExamSessionService {
   async startSession(
@@ -160,7 +156,7 @@ export class ExamSessionService {
     });
 
     const newQuestionsAnswered = session.questionsAnswered + 1;
-    const newCorrectAnswers = session.correctAnswers; 
+    const newCorrectAnswers = session.correctAnswers;
     const newAccuracy =
       newQuestionsAnswered > 0 ? newCorrectAnswers / newQuestionsAnswered : 0;
 
@@ -336,7 +332,6 @@ export class ExamSessionService {
     const now = new Date();
     let additionalPausedSeconds = 0;
 
-    
     if (session.lockedAt) {
       additionalPausedSeconds = timerService.calculateProctorAutoAdjustment(
         session.lockedAt,
@@ -366,7 +361,6 @@ export class ExamSessionService {
     };
   }
 
-  
   async extendTime(sessionId: string, additionalMinutes: number) {
     const session = await prisma.examSession.findUnique({
       where: { id: sessionId },
@@ -392,7 +386,6 @@ export class ExamSessionService {
     };
   }
 
-  
   async finishSession(sessionId: string) {
     const session = await prisma.examSession.findUnique({
       where: { id: sessionId },
@@ -479,7 +472,6 @@ export class ExamSessionService {
 
     if (!question) throw new NotFoundError("Question at this index not found");
 
-    
     const answer = await prisma.candidateAnswer.findUnique({
       where: {
         sessionId_examQuestionId: {

@@ -3,12 +3,7 @@ import { NotFoundError, BadRequestError } from "../../utils/app-error";
 import { GlobalRole } from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 
-interface UpdateUserInput {
-  firstName?: string;
-  lastName?: string;
-  highContrastMode?: boolean;
-  screenReaderEnabled?: boolean;
-}
+import { UpdateUserInput } from "../../types/modules/user.types";
 
 export class UserService {
   async getById(userId: string) {

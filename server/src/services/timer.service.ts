@@ -1,13 +1,6 @@
 import { calculateRemainingSeconds } from "../utils/date.util";
 
-export interface TimerState {
-  remainingSeconds: number;
-  serverDeadline: Date;
-  totalPausedSeconds: number;
-  isPaused: boolean;
-  isExpired: boolean;
-}
-
+import { TimerState } from "../types/modules/timer.types";
 export class TimerService {
   getTimerState(
     serverDeadline: Date,
@@ -18,7 +11,6 @@ export class TimerService {
     let remainingSeconds: number;
 
     if (isPaused) {
-      
       remainingSeconds = calculateRemainingSeconds(
         serverDeadline,
         totalPausedSeconds,

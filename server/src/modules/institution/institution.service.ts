@@ -7,16 +7,10 @@ import {
 import { InstitutionRole } from "@prisma/client";
 import { PaginationParams } from "../../utils/pagination.util";
 
-interface CreateInstitutionInput {
-  name: string;
-  code: string;
-}
-
-interface AddMemberInput {
-  userId: string;
-  role: InstitutionRole;
-  departmentIds?: string[];
-}
+import {
+  CreateInstitutionInput,
+  AddMemberInput,
+} from "../../types/modules/institution.types";
 
 export class InstitutionService {
   async create(input: CreateInstitutionInput) {
@@ -95,7 +89,6 @@ export class InstitutionService {
       throw new ConflictError("User is already a member of this institution");
     }
 
-    
     if (input.departmentIds && input.departmentIds.length > 0) {
       const departments = await prisma.department.findMany({
         where: { id: { in: input.departmentIds }, institutionId },
@@ -184,7 +177,6 @@ export class InstitutionService {
 
     if (!membership) throw new NotFoundError("Membership not found");
 
-    
     if (departmentIds.length > 0) {
       const departments = await prisma.department.findMany({
         where: { id: { in: departmentIds }, institutionId },
@@ -196,7 +188,6 @@ export class InstitutionService {
       }
     }
 
-    
     await prisma.institutionMemberDepartment.deleteMany({
       where: { institutionMemberId: membership.id },
     });

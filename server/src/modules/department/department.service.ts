@@ -1,11 +1,7 @@
 import prisma from "../../config/database.config";
 import { NotFoundError, ConflictError } from "../../utils/app-error";
 
-interface CreateDepartmentInput {
-  name: string;
-  code: string;
-  description?: string;
-}
+import { CreateDepartmentInput } from "../../types/modules/department.types";
 
 export class DepartmentService {
   async create(institutionId: string, input: CreateDepartmentInput) {
