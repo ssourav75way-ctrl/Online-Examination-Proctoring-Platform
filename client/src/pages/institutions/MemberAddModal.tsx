@@ -7,9 +7,7 @@ import {
 } from "@/services/institutionApi";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
-import { ApiError } from "@/types/common";
 import { RootState } from "@/store";
-import { Role } from "@/types/auth";
 
 interface MemberAddModalProps {
   institutionId: string;

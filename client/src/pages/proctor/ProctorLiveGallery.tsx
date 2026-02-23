@@ -1,4 +1,4 @@
-import { LiveSession, useGetActiveSessionsQuery } from "@/services/proctorApi";
+import { useGetActiveSessionsQuery } from "@/services/proctorApi";
 import { format } from "date-fns";
 
 interface ProctorLiveGalleryProps {

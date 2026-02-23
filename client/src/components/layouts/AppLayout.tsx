@@ -5,8 +5,6 @@ import { logout } from "@/store/slices/authSlice";
 import { CONSTANTS } from "@/constants";
 import { ROLE_NAVIGATION_MAP } from "@/constants/navigation";
 import { useGetUnreadCountQuery } from "@/services/notificationApi";
-import { useUpdateProfileMutation } from "@/services/userApi";
-import { useEffect } from "react";
 import { NotificationIcon } from "@/components/common/Icons";
 
 export default function AppLayout() {
@@ -16,8 +14,6 @@ export default function AppLayout() {
   const effectiveRole = useSelector(
     (state: RootState) => state.auth.effectiveRole,
   );
-
-  const [updateProfile] = useUpdateProfileMutation();
 
   const handleLogout = () => {
     localStorage.removeItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN);

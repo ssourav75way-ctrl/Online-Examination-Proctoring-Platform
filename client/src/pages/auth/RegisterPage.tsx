@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { useNavigate, Link } from "react-router-dom";
 import { CONSTANTS, ROLES } from "@/constants";
-import { Role } from "@/types/auth";
 import { Input } from "@/components/common/Input";
 import { Button } from "@/components/common/Button";
 import { apiSlice } from "@/services/api";

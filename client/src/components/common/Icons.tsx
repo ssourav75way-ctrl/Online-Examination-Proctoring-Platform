@@ -1,5 +1,3 @@
-import React from "react";
-
 export const ShieldIcon = ({
   className = "w-6 h-6",
 }: {
