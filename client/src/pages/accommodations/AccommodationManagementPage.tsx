@@ -239,7 +239,7 @@ export function AccommodationManagementPage() {
           className={tabClasses("manage")}
         >
           Active Accommodations (
-          {accommodations.filter((a) => a.isActive).length})
+          {accommodations.filter((a: any) => a.isActive).length})
         </button>
         <button
           onClick={() => setActiveTab("audit")}

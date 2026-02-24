@@ -9,7 +9,7 @@ export function ErrorBoundary() {
   let errorStatus = 500;
 
   if (isRouteErrorResponse(error)) {
-    
+
     errorMessage = error.data?.message || error.statusText;
     errorStatus = error.status;
   } else if (error instanceof Error) {

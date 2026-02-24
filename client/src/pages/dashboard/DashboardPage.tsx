@@ -91,13 +91,13 @@ export function DashboardPage() {
     (state: RootState) => state.auth.effectiveRole,
   );
   const { institutionId: selectedInstId, activeMembership } = useInstitution();
-  const userRole =
+  const currentUserRole: string =
     activeMembership?.role || effectiveRole || String(user?.globalRole || "");
-  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const isSuperAdmin = currentUserRole === "SUPER_ADMIN";
 
   const { data: instData, isLoading: instLoading } = useGetInstitutionsQuery(
     { page: 1, limit: 1 },
-    { skip: userRole === "PROCTOR" },
+    { skip: currentUserRole === "PROCTOR" || isSuperAdmin },
   );
 
   const institutionId = selectedInstId || instData?.data?.[0]?.id || "";
@@ -105,24 +105,26 @@ export function DashboardPage() {
   const { data: examData, isLoading: examLoading } =
     useGetExamsByInstitutionQuery(
       { institutionId, page: 1, limit: 1 },
-      { skip: !institutionId || userRole === "SUPER_ADMIN" },
+      { skip: !institutionId || isSuperAdmin },
     );
 
   const { data: poolData, isLoading: poolLoading } = useGetQuestionPoolsQuery(
     { institutionId, page: 1, limit: 5 },
     {
-      skip: !institutionId || (userRole !== "EXAMINER" && userRole !== "ADMIN"),
+      skip:
+        !institutionId ||
+        (currentUserRole !== "EXAMINER" && currentUserRole !== "ADMIN"),
     },
   );
 
   const { data: flagData, isLoading: flagLoading } = useGetPendingFlagsQuery(
     {},
-    { skip: userRole !== "PROCTOR" },
+    { skip: currentUserRole !== "PROCTOR" },
   );
 
   const { data: deptData, isLoading: deptLoading } = useGetDepartmentsQuery(
     institutionId,
-    { skip: !institutionId || userRole !== "ADMIN" },
+    { skip: !institutionId || currentUserRole !== "ADMIN" },
   );
 
   const dashboards: Record<string, () => JSX.Element> = {
@@ -235,7 +237,8 @@ export function DashboardPage() {
     ),
   };
 
-  const RenderDashboard = dashboards[userRole] || dashboards["CANDIDATE"];
+  const RenderDashboard =
+    dashboards[currentUserRole] || dashboards["CANDIDATE"];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -247,14 +250,15 @@ export function DashboardPage() {
           <p className="text-text-muted mt-1 text-lg">
             Role:{" "}
             <span className="text-primary-600 font-bold">
-              {userRole.replace("_", " ")}
+              {currentUserRole.replace("_", " ")}
             </span>
           </p>
         </div>
 
         <div className="flex gap-4">
-          {userRole === "CANDIDATE" && (
+          {currentUserRole === "CANDIDATE" && (
             <Button
+              id="view-exams-btn"
               size="lg"
               className="shadow-soft"
               onClick={() => navigate("/dashboard/exams")}
@@ -262,9 +266,10 @@ export function DashboardPage() {
               View Available Exams
             </Button>
           )}
-          {userRole === "EXAMINER" && (
+          {currentUserRole === "EXAMINER" && (
             <>
               <Button
+                id="create-pool-btn"
                 size="lg"
                 className="shadow-soft"
                 onClick={() => setIsPoolModalOpen(true)}
@@ -280,6 +285,7 @@ export function DashboardPage() {
                 Manage Question Bank
               </Button>
               <Button
+                id="add-question-btn"
                 size="lg"
                 className="shadow-soft"
                 onClick={() => setIsQuestionModalOpen(true)}
@@ -288,9 +294,10 @@ export function DashboardPage() {
               </Button>
             </>
           )}
-          {userRole === "ADMIN" && (
+          {currentUserRole === "ADMIN" && (
             <>
               <Button
+                id="add-examiner-btn"
                 size="lg"
                 className="shadow-soft"
                 onClick={() => {
@@ -301,6 +308,7 @@ export function DashboardPage() {
                 Add Examiner
               </Button>
               <Button
+                id="add-proctor-btn"
                 size="lg"
                 variant="secondary"
                 className="shadow-soft"
@@ -312,6 +320,7 @@ export function DashboardPage() {
                 Add Proctor
               </Button>
               <Button
+                id="add-dept-btn"
                 size="lg"
                 variant="secondary"
                 className="shadow-soft"
@@ -322,8 +331,9 @@ export function DashboardPage() {
             </>
           )}
 
-          {(userRole === "ADMIN" || userRole === "EXAMINER") && (
+          {(currentUserRole === "ADMIN" || currentUserRole === "EXAMINER") && (
             <Button
+              id="schedule-exam-btn"
               size="lg"
               variant="secondary"
               className="shadow-soft"
@@ -358,7 +368,7 @@ export function DashboardPage() {
             >
               Access Question PooL
             </Button>
-            {userRole === "PROCTOR" && (
+            {currentUserRole === "PROCTOR" && (
               <Button
                 variant="secondary"
                 onClick={() => navigate("/dashboard/sessions")}

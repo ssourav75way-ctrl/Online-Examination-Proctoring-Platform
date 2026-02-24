@@ -12,15 +12,15 @@ interface AuthState {
 function resolveEffectiveRole(user: User | null): string | null {
   if (!user) return null;
 
-  
+
   if (user.globalRole === "SUPER_ADMIN") return "SUPER_ADMIN";
 
-  
+
   if (user.institutionMembers && user.institutionMembers.length > 0) {
     return user.institutionMembers[0].role;
   }
 
-  
+
   return user.globalRole;
 }
 
@@ -67,7 +67,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.effectiveRole = null;
 
-      
+
       localStorage.removeItem("oep_user");
       localStorage.removeItem(CONSTANTS.STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN);

@@ -7,26 +7,26 @@ import {
 
 
 export class IntegrityService {
-  
+
   calculateIntegrityScore(factors: IntegrityScoreFactors): number {
     let score = 100;
 
-    
+
     score -= factors.proctorFlagSeveritySum * 5;
 
-    
+
     score -= factors.timingAnomalyCount * 8;
 
-    
+
     score -= factors.tabSwitchCount * 6;
 
-    
+
     score -= factors.collusionScore * 30;
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
-  
+
   async detectTimingAnomalies(sessionId: string): Promise<number> {
     const answers = await prisma.candidateAnswer.findMany({
       where: { sessionId },
@@ -42,7 +42,7 @@ export class IntegrityService {
       const difficulty = answer.examQuestion.questionVersion.difficulty;
       if (difficulty >= 7 && answer.timeTakenSeconds < 5) {
         anomalyCount++;
-        
+
         await prisma.proctorFlag.create({
           data: {
             sessionId,
@@ -57,7 +57,7 @@ export class IntegrityService {
     return anomalyCount;
   }
 
-  
+
   async generateExamIntegrityReport(
     examId: string,
   ): Promise<CandidateIntegrityReport[]> {
@@ -84,7 +84,7 @@ export class IntegrityService {
       },
     });
 
-    
+
     const collusionScores = await this.detectCollusion(examId, enrollments);
 
     const reports: CandidateIntegrityReport[] = [];
@@ -107,7 +107,7 @@ export class IntegrityService {
 
       const integrityScore = this.calculateIntegrityScore(factors);
 
-      
+
       if (enrollment.result) {
         await prisma.examResult.update({
           where: { id: enrollment.result.id },
@@ -131,13 +131,13 @@ export class IntegrityService {
       });
     }
 
-    
+
     reports.sort((a, b) => a.integrityScore - b.integrityScore);
 
     return reports;
   }
 
-  
+
   private async detectCollusion(
     examId: string,
     enrollments: Array<{
@@ -182,7 +182,7 @@ export class IntegrityService {
           answers2,
         );
 
-        
+
         const existing1 = candidateScores.get(candidateIds[i]) || 0;
         const existing2 = candidateScores.get(candidateIds[j]) || 0;
         candidateScores.set(candidateIds[i], Math.max(existing1, similarity));

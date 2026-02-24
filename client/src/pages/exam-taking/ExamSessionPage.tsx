@@ -44,11 +44,15 @@ export function ExamSessionPage() {
     { skip: !sessionId },
   );
 
-  const { data: enrollmentData, isLoading: enrollmentLoading } =
-    useGetMyEnrollmentQuery(
-      { institutionId, examId: examId as string },
-      { skip: !examId || !institutionId },
-    );
+  const {
+    data: enrollmentData,
+    isLoading: enrollmentLoading,
+    isError: enrollmentError,
+    error: enrollmentErrorInfo,
+  } = useGetMyEnrollmentQuery(
+    { institutionId, examId: examId as string },
+    { skip: !examId || !institutionId },
+  );
 
   const [phase, setPhase] = useState<ExamPhase>("loading");
   const [errorMsg, setErrorMsg] = useState("");
@@ -77,15 +81,45 @@ export function ExamSessionPage() {
   useEffect(() => {
     if (enrollmentLoading) return;
 
+    if (enrollmentError) {
+      setPhase("error");
+      const err = enrollmentErrorInfo as any;
+      if (err?.status === 401) {
+        setErrorMsg("Session expired. Please log in again.");
+      } else if (err?.status === 403) {
+        setErrorMsg(
+          "Access denied. You may not have permission to access exams in this institution.",
+        );
+      } else {
+        setErrorMsg(
+          err?.data?.message ||
+            "Failed to retrieve your exam enrollment. Please try again or contact support.",
+        );
+      }
+      return;
+    }
+
     if (!enrollmentData?.data) {
       setPhase("error");
       setErrorMsg(
-        "You are not enrolled in this exam. Please contact your institution administrator.",
+        "No enrollment record found for this exam. If you believe this is an error, please contact your examiner.",
       );
       return;
     }
 
     const enrollment = enrollmentData.data as Enrollment;
+
+    if (enrollment.exam?.status === "DRAFT") {
+      setPhase("error");
+      setErrorMsg("This exam is still in draft mode and cannot be taken yet.");
+      return;
+    }
+
+    if (enrollment.exam?.status === "CANCELLED") {
+      setPhase("error");
+      setErrorMsg("This exam has been cancelled.");
+      return;
+    }
 
     if (enrollment.status === "COMPLETED") {
       setPhase("finished");
@@ -107,16 +141,28 @@ export function ExamSessionPage() {
 
     if (enrollment.exam?.scheduledStartTime) {
       const startTime = new Date(enrollment.exam.scheduledStartTime);
+      const endTime = new Date(enrollment.exam.scheduledEndTime);
       const now = new Date();
+
       if (now < startTime) {
         setExamNotYetStarted(true);
+      } else if (now > endTime) {
+        setPhase("error");
+        setErrorMsg(
+          "The exam window has already ended. It was scheduled from " +
+            startTime.toLocaleTimeString() +
+            " to " +
+            endTime.toLocaleTimeString() +
+            ".",
+        );
+        return;
       } else {
         setExamNotYetStarted(false);
       }
     }
 
     setPhase("pre-exam");
-  }, [enrollmentData, enrollmentLoading]);
+  }, [enrollmentData, enrollmentLoading, enrollmentError, enrollmentErrorInfo]);
 
   useEffect(() => {
     if (phase !== "in-progress") return;
@@ -141,7 +187,7 @@ export function ExamSessionPage() {
           if (result?.data?.timerState?.isExpired) {
             setPhase("finished");
           }
-          // Check if session was unlocked by proctor
+
           if (
             phase === "locked" &&
             result?.data?.session &&
@@ -150,7 +196,7 @@ export function ExamSessionPage() {
             setLockReason(null);
             setPhase("in-progress");
           }
-          // Check if session was locked
+
           if (phase === "in-progress" && result?.data?.session?.isLocked) {
             setLockReason(
               result.data.session.lockReason ||
@@ -158,7 +204,9 @@ export function ExamSessionPage() {
             );
             setPhase("locked");
           }
-        } catch {}
+        } catch (e) {
+          console.error("Failed to fetch session status", e);
+        }
       },
       phase === "locked" ? 10000 : 30000,
     );
@@ -180,7 +228,9 @@ export function ExamSessionPage() {
           );
           setPhase("locked");
         }
-      } catch {}
+      } catch (e: unknown) {
+        console.error("Failed to report violation", e);
+      }
     } else {
       pageVisibleRef.current = true;
     }
@@ -298,15 +348,13 @@ export function ExamSessionPage() {
     };
   }, [phase, startWebcam, stopWebcam]);
 
-  // Periodic webcam snapshot capture at random intervals (15-45s)
   useEffect(() => {
     if (phase !== "in-progress" || !sessionId || !webcamActive) return;
 
     const captureSnapshot = () => {
       const video = videoRef.current;
-      if (!video || video.readyState < 2) return; // not ready
+      if (!video || video.readyState < 2) return;
 
-      // Create or reuse a hidden canvas
       if (!snapshotCanvasRef.current) {
         snapshotCanvasRef.current = document.createElement("canvas");
       }
@@ -319,20 +367,18 @@ export function ExamSessionPage() {
 
       const imageUrl = canvas.toDataURL("image/jpeg", 0.6);
 
-      // Upload snapshot — server handles absence detection
       uploadSnapshot({
         sessionId: sessionId!,
         imageUrl,
-        faceDetected: true, // basic: assume face detected since webcam is on
+        faceDetected: true,
         multipleFaces: false,
         candidateAbsent: false,
-      }).catch(() => {
-        // Silently fail — don't disrupt the exam
+      }).catch((e: unknown) => {
+        console.error("Failed to upload snapshot", e);
       });
     };
 
     const scheduleNextCapture = () => {
-      // Random interval between 15-45 seconds
       const delayMs = (15 + Math.random() * 30) * 1000;
       snapshotTimerRef.current = setTimeout(() => {
         captureSnapshot();
@@ -340,7 +386,6 @@ export function ExamSessionPage() {
       }, delayMs);
     };
 
-    // Initial capture after a short delay
     snapshotTimerRef.current = setTimeout(() => {
       captureSnapshot();
       scheduleNextCapture();
@@ -449,7 +494,9 @@ export function ExamSessionPage() {
     }
     try {
       await finishSession({ sessionId }).unwrap();
-    } catch {}
+    } catch (e: unknown) {
+      console.error("Failed to finish session", e);
+    }
     setPhase("finished");
   };
 
@@ -666,7 +713,7 @@ export function ExamSessionPage() {
     return (
       <div className="min-h-screen bg-linear-to-br from-rose-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
         <div className="max-w-lg w-full text-center space-y-8">
-          {/* Pulsing lock icon */}
+          {}
           <div className="relative mx-auto w-24 h-24">
             <div className="absolute inset-0 bg-rose-500/20 rounded-full animate-ping" />
             <div className="relative w-24 h-24 bg-rose-600/30 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-rose-500/50">
@@ -1019,6 +1066,7 @@ export function ExamSessionPage() {
             {markersData?.data.map((m) => (
               <button
                 key={m.id}
+                id={`q-palette-${m.index}`}
                 onClick={() => handleNavigateToQuestion(m.index)}
                 className={`h-10 rounded-lg font-bold text-sm transition-all border-2 ${
                   currentQuestion?.orderIndex === m.index
@@ -1027,6 +1075,7 @@ export function ExamSessionPage() {
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                       : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"
                 }`}
+                aria-label={`Go to question ${m.index + 1}${m.isAnswered ? " (Answered)" : ""}`}
               >
                 {m.index + 1}
               </button>
@@ -1049,6 +1098,7 @@ export function ExamSessionPage() {
 
           <div className="mt-12">
             <Button
+              id="submit-exam-btn"
               variant="danger"
               className="w-full py-4 text-sm font-black uppercase tracking-widest shadow-lg shadow-rose-200"
               onClick={handleFinish}
@@ -1095,6 +1145,7 @@ export function ExamSessionPage() {
                 {}
                 <div className="flex justify-between items-center pt-6 border-t border-border">
                   <Button
+                    id="prev-question-btn"
                     variant="secondary"
                     disabled={currentQuestion.orderIndex === 0}
                     onClick={() =>
@@ -1104,10 +1155,18 @@ export function ExamSessionPage() {
                     &larr; Previous
                   </Button>
                   <Button
+                    id="save-next-btn"
                     onClick={handleSubmitAnswer}
                     isLoading={isAnswerSubmitting}
                     disabled={!hasAnswer()}
                     className="px-8 shadow-lg shadow-primary-200"
+                    aria-label={
+                      markersData?.data.find(
+                        (m) => m.index === currentQuestion.orderIndex,
+                      )?.isAnswered
+                        ? "Update your answer"
+                        : "Save your answer and move to the next question"
+                    }
                   >
                     {markersData?.data.find(
                       (m) => m.index === currentQuestion.orderIndex,

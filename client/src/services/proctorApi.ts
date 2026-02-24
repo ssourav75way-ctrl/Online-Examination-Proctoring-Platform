@@ -56,7 +56,7 @@ export const proctorApi = apiSlice.injectEndpoints({
       },
       { page?: number; limit?: number; institutionId?: string }
     >({
-      query: (params) => ({
+      query: (params: Record<string, any>) => ({
         url: "/proctoring/flags/pending",
         params,
       }),
@@ -104,7 +104,13 @@ export const proctorApi = apiSlice.injectEndpoints({
       },
       { sessionId: string; page?: number; limit?: number }
     >({
-      query: ({ sessionId, ...params }) => ({
+      query: ({
+        sessionId,
+        ...params
+      }: {
+        sessionId: string;
+        [key: string]: any;
+      }) => ({
         url: `/proctoring/sessions/${sessionId}/snapshots`,
         params,
       }),

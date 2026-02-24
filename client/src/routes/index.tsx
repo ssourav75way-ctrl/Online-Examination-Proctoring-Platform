@@ -3,9 +3,11 @@ import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { ROLES } from "@/constants";
+import { InstitutionProvider } from "@/contexts/InstitutionContext";
 
 const AuthLayout = lazy(() => import("@/components/layouts/AuthLayout"));
 const AppLayout = lazy(() => import("@/components/layouts/AppLayout"));
@@ -101,41 +103,55 @@ const router = createBrowserRouter([
       {
         element: (
           <Suspense fallback={<Loader />}>
-            <AppLayout />
+            <InstitutionProvider>
+              <Outlet />
+            </InstitutionProvider>
           </Suspense>
         ),
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: "institutions", element: <InstitutionListPage /> },
-          { path: "institutions/:id", element: <InstitutionDetailPage /> },
-          { path: "departments", element: <DepartmentListPage /> },
-          { path: "users", element: <UserManagementPage /> },
-          { path: "questions", element: <QuestionPoolListPage /> },
-          { path: "questions/:poolId", element: <QuestionListPage /> },
-          { path: "exams", element: <ExamListPage /> },
-          { path: "exams/:id", element: <ExamDetailPage /> },
-          { path: "exams/:id/results", element: <ExamResultsPage /> },
-          { path: "results-management", element: <ExaminerResultsDashboard /> },
-          { path: "sessions", element: <ProctorQueuePage /> },
           {
-            path: "sessions/:sessionId",
-            element: <ProctorSessionDetailPage />,
+            element: (
+              <Suspense fallback={<Loader />}>
+                <AppLayout />
+              </Suspense>
+            ),
+            children: [
+              { index: true, element: <DashboardPage /> },
+              { path: "institutions", element: <InstitutionListPage /> },
+              { path: "institutions/:id", element: <InstitutionDetailPage /> },
+              { path: "departments", element: <DepartmentListPage /> },
+              { path: "users", element: <UserManagementPage /> },
+              { path: "questions", element: <QuestionPoolListPage /> },
+              { path: "questions/:poolId", element: <QuestionListPage /> },
+              { path: "exams", element: <ExamListPage /> },
+              { path: "exams/:id", element: <ExamDetailPage /> },
+              { path: "exams/:id/results", element: <ExamResultsPage /> },
+              {
+                path: "results-management",
+                element: <ExaminerResultsDashboard />,
+              },
+              { path: "sessions", element: <ProctorQueuePage /> },
+              {
+                path: "sessions/:sessionId",
+                element: <ProctorSessionDetailPage />,
+              },
+              { path: "history", element: <ResultsHistoryPage /> },
+              { path: "notifications", element: <NotificationCenterPage /> },
+              {
+                path: "accommodations",
+                element: <AccommodationManagementPage />,
+              },
+            ],
           },
-          { path: "history", element: <ResultsHistoryPage /> },
-          { path: "notifications", element: <NotificationCenterPage /> },
           {
-            path: "accommodations",
-            element: <AccommodationManagementPage />,
+            path: "live/:examId",
+            element: (
+              <Suspense fallback={<Loader />}>
+                <ExamSessionPage />
+              </Suspense>
+            ),
           },
         ],
-      },
-      {
-        path: "live/:examId",
-        element: (
-          <Suspense fallback={<Loader />}>
-            <ExamSessionPage />
-          </Suspense>
-        ),
       },
     ],
   },

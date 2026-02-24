@@ -58,7 +58,7 @@ export function NotificationCenterPage() {
       try {
         await markAsRead({ id: notification.id }).unwrap();
       } catch {
-        
+
       }
     }
 
@@ -72,7 +72,7 @@ export function NotificationCenterPage() {
     try {
       await markAllAsRead().unwrap();
     } catch {
-      
+
     }
   };
 

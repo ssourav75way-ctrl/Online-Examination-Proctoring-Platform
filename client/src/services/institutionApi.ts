@@ -37,7 +37,7 @@ export interface InstitutionMember {
 
 export const institutionApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    
+
     getInstitutions: builder.query<
       {
         data: Institution[];
@@ -86,7 +86,7 @@ export const institutionApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Institution"],
     }),
 
-    
+
     getDepartments: builder.query<{ data: Department[] }, string>({
       query: (institutionId) => `/institutions/${institutionId}/departments`,
       providesTags: ["Department"],
@@ -124,7 +124,7 @@ export const institutionApi = apiSlice.injectEndpoints({
       invalidatesTags: ["Department"],
     }),
 
-    
+
     getMembers: builder.query<
       {
         data: InstitutionMember[];

@@ -94,7 +94,7 @@ async function main() {
       passwordHash: examinerPassword,
       firstName: "Prof",
       lastName: "Smith",
-      globalRole: GlobalRole.CANDIDATE, // Global role is CANDIDATE, institution role is EXAMINER
+      globalRole: GlobalRole.CANDIDATE,
       isActive: true,
     },
   });
@@ -184,8 +184,8 @@ async function main() {
   console.log(`  Created question: ${question.topic}`);
 
   const now = new Date();
-  const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // tomorrow
-  const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+  const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
 
   const exam = await prisma.exam.create({
     data: {

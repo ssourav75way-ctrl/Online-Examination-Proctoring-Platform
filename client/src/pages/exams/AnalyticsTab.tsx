@@ -98,7 +98,7 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
+      { }
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
@@ -153,7 +153,7 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
         </div>
       </div>
 
-      {/* Difficulty Distribution Bar */}
+      { }
       <div className="bg-white border border-slate-200 rounded-xl p-4">
         <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">
           Difficulty Distribution
@@ -197,14 +197,14 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
         </div>
       </div>
 
-      {/* Filter Buttons */}
+      { }
       <div className="flex gap-2">
         {filterBtn("all", "All Questions", analytics.length)}
         {filterBtn("flagged", "⚠ Flagged", stats.flaggedCount)}
         {filterBtn("good", "✓ Good", stats.goodCount)}
       </div>
 
-      {/* Question Cards */}
+      { }
       <div className="grid grid-cols-1 gap-4">
         {filtered.map((item, index) => {
           const isExpanded = expandedId === item.questionId;
@@ -215,7 +215,7 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
                 item.flaggedForReview ? "border-amber-200" : "border-border"
               }`}
             >
-              {/* Header */}
+              { }
               <button
                 onClick={() =>
                   setExpandedId(isExpanded ? null : item.questionId)
@@ -273,7 +273,7 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
                 </div>
               </button>
 
-              {/* Expanded Content */}
+              { }
               {isExpanded && (
                 <div className="p-6 space-y-4">
                   {item.flaggedForReview && (
@@ -282,7 +282,7 @@ export default function AnalyticsTab({ examId }: AnalyticsTabProps) {
                     </div>
                   )}
 
-                  {/* Interpretation Guidance */}
+                  { }
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                       <p className="font-bold text-slate-700 mb-1">

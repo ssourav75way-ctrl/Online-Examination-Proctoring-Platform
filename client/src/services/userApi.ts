@@ -13,7 +13,7 @@ export interface UserSummary {
 export const userApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     searchCandidate: builder.query<{ data: UserSummary | null }, string>({
-      query: (email) => ({
+      query: (email: string) => ({
         url: "/users/search",
         params: { email },
       }),
@@ -28,7 +28,7 @@ export const userApi = apiSlice.injectEndpoints({
         screenReaderEnabled?: boolean;
       }
     >({
-      query: (body) => ({
+      query: (body: any) => ({
         url: "/users/profile",
         method: "PUT",
         body,

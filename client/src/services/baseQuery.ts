@@ -30,12 +30,12 @@ export const baseQueryWithReauth: BaseQueryFn<
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  
+
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    
+
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
@@ -43,7 +43,7 @@ export const baseQueryWithReauth: BaseQueryFn<
           CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN,
         );
         if (refreshToken) {
-          
+
           const refreshResult = await baseQuery(
             {
               url: "/auth/refresh",
@@ -55,18 +55,18 @@ export const baseQueryWithReauth: BaseQueryFn<
           );
 
           if (refreshResult.data) {
-            
+
             const data = refreshResult.data as {
               data: { accessToken: string; refreshToken: string };
             };
 
-            
+
             localStorage.setItem(
               CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN,
               data.data.refreshToken,
             );
 
-            
+
             const currentUser = (api.getState() as RootState).auth.user;
             if (currentUser) {
               api.dispatch(
@@ -77,7 +77,7 @@ export const baseQueryWithReauth: BaseQueryFn<
               );
             }
 
-            
+
             result = await baseQuery(args, api, extraOptions);
           } else {
             api.dispatch(logout());
@@ -90,7 +90,7 @@ export const baseQueryWithReauth: BaseQueryFn<
         release();
       }
     } else {
-      
+
       await mutex.waitForUnlock();
       result = await baseQuery(args, api, extraOptions);
     }

@@ -13,7 +13,7 @@ export class ProctoringService {
     });
     if (!session) throw new NotFoundError("Session not found");
 
-    // Server-side absence detection: check gap since last snapshot
+
     let candidateAbsent = input.candidateAbsent;
     const lastSnapshot = await prisma.proctorSnapshot.findFirst({
       where: { sessionId: input.sessionId },
@@ -60,7 +60,7 @@ export class ProctoringService {
       });
     }
     if (candidateAbsent) {
-      // Calculate the actual gap to include in the description
+
       const actualGap = lastSnapshot
         ? Math.floor((Date.now() - lastSnapshot.capturedAt.getTime()) / 1000)
         : 0;

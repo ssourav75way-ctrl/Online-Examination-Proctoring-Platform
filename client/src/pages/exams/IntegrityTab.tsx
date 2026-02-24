@@ -32,16 +32,10 @@ function EvidenceDrillDown({
   };
   onClose: () => void;
 }) {
-  // The evidenceIds are proctor flag IDs. We'll use the first flag's sessionId to fetch all flags.
-  // Since the integrity report generates flags per session, we fetch via session flags api.
-  // But we don't have the sessionId. The evidenceIds are flag IDs themselves.
-  // We'll display the evidenceIds and their details.
   const [activeEvidenceTab, setActiveEvidenceTab] = useState<
     "summary" | "flags" | "timeline"
   >("summary");
 
-  // We don't have a direct "get flags by IDs" endpoint, but evidenceIds are flag IDs
-  // We'll show a rich summary view instead
   const scoreColor =
     report.integrityScore >= 85
       ? "text-emerald-600"
@@ -58,7 +52,7 @@ function EvidenceDrillDown({
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Header */}
+        {}
         <div className="p-6 border-b flex justify-between items-start bg-slate-50">
           <div>
             <h3 className="text-xl font-bold text-slate-900">
@@ -74,7 +68,7 @@ function EvidenceDrillDown({
           </button>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex border-b border-slate-200 px-6">
           {(["summary", "flags", "timeline"] as const).map((tab) => (
             <button
@@ -95,11 +89,11 @@ function EvidenceDrillDown({
           ))}
         </div>
 
-        {/* Content */}
+        {}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
           {activeEvidenceTab === "summary" && (
             <>
-              {/* Big Score Display */}
+              {}
               <div
                 className={`p-6 rounded-2xl border-2 ${scoreBg} flex items-center gap-6`}
               >
@@ -124,7 +118,7 @@ function EvidenceDrillDown({
                 </div>
               </div>
 
-              {/* Factor Breakdown */}
+              {}
               <div className="grid grid-cols-2 gap-4">
                 <FactorCard
                   label="Proctor Flags"
@@ -225,7 +219,7 @@ function EvidenceDrillDown({
                 the final integrity score.
               </p>
               <div className="relative">
-                {/* Vertical line */}
+                {}
                 <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200" />
 
                 <div className="space-y-6">
@@ -286,7 +280,7 @@ function EvidenceDrillDown({
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="p-6 border-t bg-slate-50 flex justify-end">
           <Button onClick={onClose}>Close Report</Button>
         </div>
@@ -388,7 +382,7 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
 
   const reports = data?.data || [];
   const selectedReport = reports.find(
-    (r) => r.candidateId === selectedCandidate,
+    (r: any) => r.candidateId === selectedCandidate,
   );
 
   const sortedReports = useMemo(() => {
@@ -467,7 +461,7 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Summary Header */}
+      {}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
@@ -507,7 +501,7 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
               High Risk
             </p>
             <p className="text-lg font-black text-rose-600">
-              {reports.filter((r) => r.integrityScore < 60).length}
+              {reports.filter((r: any) => r.integrityScore < 60).length}
             </p>
           </div>
           <div className="text-center border-l pl-4 border-slate-200">
@@ -517,8 +511,10 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
             <p className="text-lg font-black text-primary-600">
               {reports.length > 0
                 ? Math.round(
-                    reports.reduce((s, r) => s + r.integrityScore, 0) /
-                      reports.length,
+                    reports.reduce(
+                      (s: number, r: any) => s + r.integrityScore,
+                      0,
+                    ) / reports.length,
                   )
                 : 0}
             </p>
@@ -526,7 +522,7 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
         </div>
       </div>
 
-      {/* Sortable Table */}
+      {}
       <div className="overflow-x-auto border border-border rounded-xl">
         <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-slate-50 border-b border-border">
@@ -637,7 +633,7 @@ export default function IntegrityTab({ examId }: IntegrityTabProps) {
         </table>
       </div>
 
-      {/* Evidence Drill-Down Modal */}
+      {}
       {selectedReport && (
         <EvidenceDrillDown
           evidenceIds={selectedReport.evidenceIds}

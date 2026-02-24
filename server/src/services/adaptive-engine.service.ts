@@ -40,7 +40,6 @@ export class AdaptiveEngineService {
 
     const examQuestions = exam.questions;
 
-    // Find candidate and previous answers across all sessions for this exam
     const session = await prisma.examSession.findUnique({
       where: { id: sessionId },
       include: { enrollment: true },
@@ -74,7 +73,6 @@ export class AdaptiveEngineService {
       ).map((a) => a.examQuestionId),
     );
 
-    // Filter out questions answered in ANY session of this exam (zero overlap requirement)
     const unanswered = examQuestions.filter(
       (eq) => !allPastAnsweredQuestionIds.has(eq.id),
     );
@@ -260,7 +258,6 @@ export class AdaptiveEngineService {
     if (!session) return null;
     const candidateId = session.enrollment.candidateId;
 
-    // Get all questions answered in previous sessions
     const pastAnsweredQuestionIds = new Set(
       (
         await prisma.candidateAnswer.findMany({
@@ -278,7 +275,6 @@ export class AdaptiveEngineService {
       ).map((a) => a.examQuestionId),
     );
 
-    // Find the next available question by orderIndex that hasn't been seen
     const examQuestion = await prisma.examQuestion.findFirst({
       where: {
         examId,
@@ -349,11 +345,11 @@ export class AdaptiveEngineService {
     }
 
     const totalCorrect = Object.values(newState.topicAccuracyMap).reduce(
-      (sum, t) => sum + t.correct,
+      (sum: number, t: { correct: number; total: number }) => sum + t.correct,
       0,
     );
     const totalAnswered = Object.values(newState.topicAccuracyMap).reduce(
-      (sum, t) => sum + t.total,
+      (sum: number, t: { correct: number; total: number }) => sum + t.total,
       0,
     );
 

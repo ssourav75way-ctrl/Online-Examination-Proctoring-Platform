@@ -6,7 +6,7 @@ import { codeExecutorService } from "../../services/code-executor.service";
 import { GradingResult, McqOption, KeywordConfig } from "../../types";
 
 export class GradingService {
-  
+
   async autoGradeSession(sessionId: string) {
     const answers = await prisma.candidateAnswer.findMany({
       where: { sessionId, isGraded: false },
@@ -66,7 +66,7 @@ export class GradingService {
     return results;
   }
 
-  
+
   async gradeAnswer(
     type: QuestionType,
     answerContent: string | null,
@@ -116,7 +116,7 @@ export class GradingService {
     }
   }
 
-  
+
   private gradeMcq(
     answerContent: string | null,
     options: McqOption[] | null,
@@ -142,7 +142,7 @@ export class GradingService {
     };
   }
 
-  
+
   private gradeMultiSelect(
     answerContent: string | null,
     options: McqOption[] | null,
@@ -194,7 +194,7 @@ export class GradingService {
       }
     }
 
-    
+
     const rawScore = Math.max(
       0,
       (correctSelected - wrongSelected) / totalCorrect,
@@ -209,7 +209,7 @@ export class GradingService {
     };
   }
 
-  
+
   private gradeFillBlank(
     answerContent: string | null,
     correctAnswer: string | null,
@@ -235,7 +235,7 @@ export class GradingService {
     };
   }
 
-  
+
   private gradeShortAnswer(
     answerContent: string | null,
     keywords: KeywordConfig[] | null,
@@ -267,7 +267,7 @@ export class GradingService {
     };
   }
 
-  
+
   private async gradeCode(
     codeSubmission: string | null,
     language: string,
@@ -315,7 +315,7 @@ export class GradingService {
     };
   }
 
-  
+
   async overrideScore(
     answerId: string,
     manualScore: number,

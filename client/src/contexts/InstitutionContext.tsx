@@ -23,7 +23,9 @@ const InstitutionContext = createContext<InstitutionContextType>({
   institutionId: "",
   allMemberships: [],
   hasMultiple: false,
-  switchInstitution: () => {},
+  switchInstitution: (index: number) => {
+    console.warn("switchInstitution called before Provider was ready", index);
+  },
   activeIndex: 0,
 });
 

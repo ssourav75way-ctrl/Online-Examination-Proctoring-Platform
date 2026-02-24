@@ -1,6 +1,6 @@
 
 export class SimilarityService {
-  
+
   levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = [];
 
@@ -25,7 +25,7 @@ export class SimilarityService {
     return matrix[a.length][b.length];
   }
 
-  
+
   similarityRatio(a: string, b: string): number {
     const maxLength = Math.max(a.length, b.length);
     if (maxLength === 0) return 1;
@@ -33,7 +33,7 @@ export class SimilarityService {
     return 1 - distance / maxLength;
   }
 
-  
+
   jaccardSimilarity(a: string, b: string): number {
     const wordsA = new Set(
       a
@@ -55,7 +55,7 @@ export class SimilarityService {
     return intersection.size / union.size;
   }
 
-  
+
   scoreShortAnswer(
     answer: string,
     keywords: { keyword: string; weight: number }[],
@@ -71,14 +71,14 @@ export class SimilarityService {
       totalWeight += weight;
       const normalizedKeyword = keyword.toLowerCase();
 
-      
+
       if (normalizedAnswer.includes(normalizedKeyword)) {
         matchedKeywords.push(keyword);
         matchedWeight += weight;
         continue;
       }
 
-      
+
       const answerWords = normalizedAnswer.split(/\s+/);
       let found = false;
       for (const word of answerWords) {
@@ -104,12 +104,12 @@ export class SimilarityService {
     };
   }
 
-  
+
   compareAnswerPatterns(
     answers1: { questionId: string; score: number }[],
     answers2: { questionId: string; score: number }[],
   ): number {
-    
+
     const allQuestionIds = new Set([
       ...answers1.map((a) => a.questionId),
       ...answers2.map((a) => a.questionId),

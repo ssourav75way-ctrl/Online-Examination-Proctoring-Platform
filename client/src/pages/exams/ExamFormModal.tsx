@@ -110,7 +110,7 @@ export function ExamFormModal({
             onClick={onClose}
             className="text-text-muted hover:text-text-main focus:outline-none"
           >
-            
+
           </button>
         </div>
 

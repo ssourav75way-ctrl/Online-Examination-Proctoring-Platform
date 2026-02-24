@@ -29,8 +29,8 @@ export interface IntegrityScoreFactors {
 
 export interface QuestionAnalytics {
   questionId: string;
-  difficultyIndex: number; 
-  discriminationIndex: number; 
+  difficultyIndex: number;
+  discriminationIndex: number;
   distractorAnalysis: DistractorInfo[];
   flaggedForReview: boolean;
   flagReason: string | null;

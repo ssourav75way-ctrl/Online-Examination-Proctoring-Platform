@@ -103,15 +103,16 @@ export function ProctorSessionDetailPage() {
     if (!sessionId) return;
     getSessionStatus({ sessionId })
       .unwrap()
-      .then((result) => {
+      .then((result: any) => {
         setSessionInfo({
           isLocked: result.data.session.isLocked,
           lockReason: result.data.session.lockReason,
           remainingSeconds: result.data.timerState.remainingSeconds,
         });
       })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      .catch((err) => {
+        console.error("Failed to fetch session status", err);
+      });
   }, [sessionId]);
 
   const snapshots = snapshotsData?.data || [];

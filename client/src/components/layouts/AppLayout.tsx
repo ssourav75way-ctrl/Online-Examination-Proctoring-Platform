@@ -8,12 +8,9 @@ import { ROLE_NAVIGATION_MAP } from "@/constants/navigation";
 import { useGetUnreadCountQuery } from "@/services/notificationApi";
 import { useUpdateProfileMutation } from "@/services/userApi";
 import { NotificationIcon } from "@/components/common/Icons";
-import {
-  InstitutionProvider,
-  useInstitution,
-} from "@/contexts/InstitutionContext";
+import { useInstitution } from "@/contexts/InstitutionContext";
 
-function AppLayoutInner() {
+export function AppLayoutInner() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -50,14 +47,12 @@ function AppLayoutInner() {
   const unreadCount = unreadData?.data.unreadCount ?? 0;
   const [updateProfile] = useUpdateProfileMutation();
 
-  // High-contrast: use local state + localStorage so it works instantly
   const [isHighContrast, setIsHighContrast] = useState(() => {
     const saved = localStorage.getItem("oep_high_contrast");
     if (saved !== null) return saved === "true";
     return user?.highContrastMode ?? false;
   });
 
-  // Apply the class on mount and whenever the state changes
   useEffect(() => {
     if (isHighContrast) {
       document.documentElement.classList.add("high-contrast");
@@ -78,7 +73,6 @@ function AppLayoutInner() {
     updateProfile({ highContrastMode: newValue }).catch(() => {});
   };
 
-  // Screen reader mode: local state + localStorage
   const [isScreenReader, setIsScreenReader] = useState(() => {
     const saved = localStorage.getItem("oep_screen_reader");
     if (saved !== null) return saved === "true";
@@ -111,7 +105,6 @@ function AppLayoutInner() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-border bg-surface shadow-soft z-10 hidden md:flex md:flex-col">
         <div className="flex h-16 items-center px-6 border-b border-border bg-primary-700">
           <span className="font-bold text-lg text-white tracking-wide">
@@ -119,7 +112,6 @@ function AppLayoutInner() {
           </span>
         </div>
 
-        {/* Institution Switcher in Sidebar */}
         {activeMembership && (
           <div className="px-4 pt-4 pb-2">
             {hasMultiple ? (
@@ -216,9 +208,7 @@ function AppLayoutInner() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="h-16 border-b border-border bg-surface/80 backdrop-blur-md flex items-center justify-between px-8 shadow-sm">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-text-main capitalize">
@@ -249,7 +239,6 @@ function AppLayoutInner() {
               )}
             </button>
 
-            {/* High Contrast Toggle */}
             <button
               type="button"
               onClick={handleToggleContrast}
@@ -284,7 +273,6 @@ function AppLayoutInner() {
               </svg>
             </button>
 
-            {/* Screen Reader Toggle */}
             <button
               type="button"
               onClick={handleToggleScreenReader}
@@ -334,7 +322,6 @@ function AppLayoutInner() {
           </div>
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-auto p-8">
           <Outlet />
         </div>
@@ -344,9 +331,47 @@ function AppLayoutInner() {
 }
 
 export default function AppLayout() {
-  return (
-    <InstitutionProvider>
-      <AppLayoutInner />
-    </InstitutionProvider>
-  );
+  const { institutionId } = useInstitution();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isSuperAdmin = user?.globalRole === "SUPER_ADMIN";
+  const isCandidate = user?.globalRole === "CANDIDATE";
+
+  if (!institutionId && !isSuperAdmin && !isCandidate) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-slate-200 max-w-md">
+          <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-amber-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.07 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">
+            No Institution Context
+          </h2>
+          <p className="text-slate-600 mb-6 text-sm">
+            You don't have an active institution membership. Please ensure your
+            account is assigned to an institution.
+          </p>
+          <button
+            onClick={() => (window.location.href = "/dashboard")}
+            className="w-full py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <AppLayoutInner />;
 }

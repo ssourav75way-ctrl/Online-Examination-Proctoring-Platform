@@ -35,7 +35,7 @@ export const sessionApi = apiSlice.injectEndpoints({
       },
       { enrollmentId: string }
     >({
-      query: ({ enrollmentId }) => ({
+      query: ({ enrollmentId }: { enrollmentId: string }) => ({
         url: `/exam-sessions/start/${enrollmentId}`,
         method: "POST",
       }),
@@ -46,7 +46,13 @@ export const sessionApi = apiSlice.injectEndpoints({
       { data: AnswerResult },
       { sessionId: string; body: Record<string, unknown> }
     >({
-      query: ({ sessionId, body }) => ({
+      query: ({
+        sessionId,
+        body,
+      }: {
+        sessionId: string;
+        body: Record<string, unknown>;
+      }) => ({
         url: `/exam-sessions/${sessionId}/submit`,
         method: "POST",
         body,
@@ -86,7 +92,13 @@ export const sessionApi = apiSlice.injectEndpoints({
       { data: ViolationResult },
       { sessionId: string; type: string; metadata?: Record<string, unknown> }
     >({
-      query: ({ sessionId, ...body }) => ({
+      query: ({
+        sessionId,
+        ...body
+      }: {
+        sessionId: string;
+        [key: string]: any;
+      }) => ({
         url: `/exam-sessions/${sessionId}/violation`,
         method: "POST",
         body,
@@ -129,7 +141,13 @@ export const sessionApi = apiSlice.injectEndpoints({
       },
       { sessionId: string; additionalMinutes: number }
     >({
-      query: ({ sessionId, ...body }) => ({
+      query: ({
+        sessionId,
+        ...body
+      }: {
+        sessionId: string;
+        [key: string]: any;
+      }) => ({
         url: `/exam-sessions/${sessionId}/extend-time`,
         method: "PATCH",
         body,
