@@ -91,3 +91,34 @@
 .high-contrast .card {
   border: 2px solid #fff !important;
 }
+
+/* Screen Reader Mode: enhanced focus, larger text, reduced motion, skip links */
+.screen-reader-mode *:focus {
+  outline: 3px solid #4f46e5 !important;
+  outline-offset: 3px !important;
+}
+
+.screen-reader-mode *,
+.screen-reader-mode *::before,
+.screen-reader-mode *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.screen-reader-mode button,
+.screen-reader-mode a,
+.screen-reader-mode input,
+.screen-reader-mode select,
+.screen-reader-mode textarea {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.screen-reader-mode p,
+.screen-reader-mode span,
+.screen-reader-mode label,
+.screen-reader-mode td,
+.screen-reader-mode th {
+  line-height: 1.8 !important;
+}

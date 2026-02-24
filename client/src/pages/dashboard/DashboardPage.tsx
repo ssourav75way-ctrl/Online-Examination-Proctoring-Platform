@@ -13,6 +13,7 @@ import { useGetPendingFlagsQuery } from "@/services/proctorApi";
 import { QuestionPoolFormModal } from "../questions/QuestionPoolFormModal";
 import { QuestionFormModal } from "../questions/QuestionFormModal";
 import { ExamFormModal } from "../exams/ExamFormModal";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { MemberAddModal } from "../institutions/MemberAddModal";
 import { DepartmentFormModal } from "../institutions/DepartmentFormModal";
 import { cn } from "@/utils/cn";
@@ -89,8 +90,9 @@ export function DashboardPage() {
   const effectiveRole = useSelector(
     (state: RootState) => state.auth.effectiveRole,
   );
-
-  const userRole = effectiveRole || String(user?.globalRole || "");
+  const { institutionId: selectedInstId, activeMembership } = useInstitution();
+  const userRole =
+    activeMembership?.role || effectiveRole || String(user?.globalRole || "");
   const isSuperAdmin = userRole === "SUPER_ADMIN";
 
   const { data: instData, isLoading: instLoading } = useGetInstitutionsQuery(
@@ -98,10 +100,7 @@ export function DashboardPage() {
     { skip: userRole === "PROCTOR" },
   );
 
-  const institutionId =
-    user?.institutionMembers?.[0]?.institution?.id ||
-    instData?.data?.[0]?.id ||
-    "";
+  const institutionId = selectedInstId || instData?.data?.[0]?.id || "";
 
   const { data: examData, isLoading: examLoading } =
     useGetExamsByInstitutionQuery(

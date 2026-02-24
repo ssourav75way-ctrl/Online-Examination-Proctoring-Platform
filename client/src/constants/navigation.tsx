@@ -1,4 +1,3 @@
-
 const Icons = {
   Home: () => (
     <span className="bg-primary-100 text-primary-600 px-2 py-0.5 rounded text-xs font-bold font-mono border border-primary-200 shadow-sm mr-3">
@@ -38,7 +37,6 @@ type RoleMapItem = {
   icon: () => JSX.Element;
 };
 
-
 export const ROLE_NAVIGATION_MAP: Record<string, RoleMapItem[]> = {
   SUPER_ADMIN: [
     { path: "/dashboard", label: "Overview", icon: Icons.Home },
@@ -64,6 +62,11 @@ export const ROLE_NAVIGATION_MAP: Record<string, RoleMapItem[]> = {
       path: "/dashboard/users",
       label: "User Management",
       icon: Icons.Users,
+    },
+    {
+      path: "/dashboard/accommodations",
+      label: "Accommodations",
+      icon: Icons.ShieldAlert,
     },
   ],
   EXAMINER: [

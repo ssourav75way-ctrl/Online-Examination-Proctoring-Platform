@@ -40,7 +40,32 @@ export class AdaptiveEngineService {
 
     const examQuestions = exam.questions;
 
-    const answeredQuestionIds = new Set(
+    // Find candidate and previous answers across all sessions for this exam
+    const session = await prisma.examSession.findUnique({
+      where: { id: sessionId },
+      include: { enrollment: true },
+    });
+
+    if (!session) return null;
+    const candidateId = session.enrollment.candidateId;
+
+    const allPastAnsweredQuestionIds = new Set(
+      (
+        await prisma.candidateAnswer.findMany({
+          where: {
+            session: {
+              enrollment: {
+                candidateId,
+                examId,
+              },
+            },
+          },
+          select: { examQuestionId: true },
+        })
+      ).map((a) => a.examQuestionId),
+    );
+
+    const answeredInCurrentSession = new Set(
       (
         await prisma.candidateAnswer.findMany({
           where: { sessionId },
@@ -49,16 +74,16 @@ export class AdaptiveEngineService {
       ).map((a) => a.examQuestionId),
     );
 
+    // Filter out questions answered in ANY session of this exam (zero overlap requirement)
     const unanswered = examQuestions.filter(
-      (eq) => !answeredQuestionIds.has(eq.id),
+      (eq) => !allPastAnsweredQuestionIds.has(eq.id),
     );
 
     if (unanswered.length === 0) return null;
 
-    
     const topicAnswerCounts: Record<string, number> = {};
     for (const eq of examQuestions) {
-      if (answeredQuestionIds.has(eq.id)) {
+      if (answeredInCurrentSession.has(eq.id)) {
         const topic = eq.question.topic;
         topicAnswerCounts[topic] = (topicAnswerCounts[topic] || 0) + 1;
       }
@@ -67,16 +92,13 @@ export class AdaptiveEngineService {
     const abilityTargetDifficulty =
       this.calculateTargetDifficulty(adaptiveState);
 
-    
-    
-    
     if (exam.adaptiveConfig) {
       const targetDifficultySum = exam.adaptiveConfig.targetDifficultySum;
       const totalQuestions = examQuestions.length;
 
       let sumDifficultySoFar = 0;
       for (const eq of examQuestions) {
-        if (answeredQuestionIds.has(eq.id)) {
+        if (answeredInCurrentSession.has(eq.id)) {
           sumDifficultySoFar += eq.questionVersion.difficulty;
         }
       }
@@ -88,8 +110,6 @@ export class AdaptiveEngineService {
           ? remainingBudget / remainingQuestions
           : abilityTargetDifficulty;
 
-      
-      
       const progress =
         totalQuestions > 0
           ? (totalQuestions - remainingQuestions) / totalQuestions
@@ -116,8 +136,6 @@ export class AdaptiveEngineService {
         (topic) => (topicAnswerCounts[topic] || 0) === 0,
       );
 
-      
-      
       if (zeroTopics.length > 0 && remainingQuestions <= zeroTopics.length) {
         selectedTopic = zeroTopics[0];
       } else {
@@ -143,10 +161,9 @@ export class AdaptiveEngineService {
           bestScore = score;
           selected = eq;
         } else if (score === bestScore && remainingQuestions === 1) {
-          
-          
           const bestFinalDiff = Math.abs(
-            sumDifficultySoFar + selected.questionVersion.difficulty -
+            sumDifficultySoFar +
+              selected.questionVersion.difficulty -
               targetDifficultySum,
           );
           const candidateFinalDiff = Math.abs(
@@ -191,8 +208,6 @@ export class AdaptiveEngineService {
     let minCoverage = Infinity;
 
     for (const [topic] of topicGroups) {
-      
-      
       const coverage = topicAnswerCounts[topic] || 0;
       if (coverage < minCoverage) {
         minCoverage = coverage;
@@ -237,12 +252,44 @@ export class AdaptiveEngineService {
     examId: string,
     currentIndex: number,
   ): Promise<QuestionDeliveryItem | null> {
+    const session = await prisma.examSession.findUnique({
+      where: { id: sessionId },
+      include: { enrollment: true },
+    });
+
+    if (!session) return null;
+    const candidateId = session.enrollment.candidateId;
+
+    // Get all questions answered in previous sessions
+    const pastAnsweredQuestionIds = new Set(
+      (
+        await prisma.candidateAnswer.findMany({
+          where: {
+            sessionId: { not: sessionId },
+            session: {
+              enrollment: {
+                candidateId,
+                examId,
+              },
+            },
+          },
+          select: { examQuestionId: true },
+        })
+      ).map((a) => a.examQuestionId),
+    );
+
+    // Find the next available question by orderIndex that hasn't been seen
     const examQuestion = await prisma.examQuestion.findFirst({
-      where: { examId, orderIndex: currentIndex },
+      where: {
+        examId,
+        orderIndex: { gte: currentIndex },
+        id: { notIn: Array.from(pastAnsweredQuestionIds) },
+      },
       include: {
         question: true,
         questionVersion: true,
       },
+      orderBy: { orderIndex: "asc" },
     });
 
     if (!examQuestion) return null;
@@ -267,7 +314,7 @@ export class AdaptiveEngineService {
   }
 
   private calculateTargetDifficulty(state: AdaptiveState): number {
-    if (state.questionsServed === 0) return 5; 
+    if (state.questionsServed === 0) return 5;
 
     const overallAccuracy =
       state.questionsServed > 0 ? state.runningAccuracy : 0.5;
@@ -301,7 +348,6 @@ export class AdaptiveEngineService {
       newState.topicAccuracyMap[topic].correct++;
     }
 
-    
     const totalCorrect = Object.values(newState.topicAccuracyMap).reduce(
       (sum, t) => sum + t.correct,
       0,

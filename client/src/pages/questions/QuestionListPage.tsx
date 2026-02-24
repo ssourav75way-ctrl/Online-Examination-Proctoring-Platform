@@ -5,7 +5,7 @@ import {
   useGetQuestionPoolByIdQuery,
 } from "@/services/questionApi";
 import { Button } from "@/components/common/Button";
-import { useSelector } from "react-redux";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { QuestionFormModal } from "./QuestionFormModal";
 import { VersionHistoryModal } from "./VersionHistoryModal";
 import { Question } from "@/types/exam";
@@ -39,8 +39,6 @@ const difficultyColor = (d: number) => {
   return "bg-red-100 text-red-800";
 };
 
-import { RootState } from "@/store";
-
 export function QuestionListPage() {
   const { poolId } = useParams<{ poolId: string }>();
   const navigate = useNavigate();
@@ -53,8 +51,7 @@ export function QuestionListPage() {
   const [topicFilter, setTopicFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const { data: poolData } = useGetQuestionPoolByIdQuery(
     { institutionId, poolId: poolId as string },

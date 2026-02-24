@@ -13,13 +13,29 @@ export class ProctoringService {
     });
     if (!session) throw new NotFoundError("Session not found");
 
+    // Server-side absence detection: check gap since last snapshot
+    let candidateAbsent = input.candidateAbsent;
+    const lastSnapshot = await prisma.proctorSnapshot.findFirst({
+      where: { sessionId: input.sessionId },
+      orderBy: { capturedAt: "desc" },
+      select: { capturedAt: true },
+    });
+    if (lastSnapshot) {
+      const gapSeconds = Math.floor(
+        (Date.now() - lastSnapshot.capturedAt.getTime()) / 1000,
+      );
+      if (gapSeconds > proctoringConfig.absenceThresholdSeconds) {
+        candidateAbsent = true;
+      }
+    }
+
     const snapshot = await prisma.proctorSnapshot.create({
       data: {
         sessionId: input.sessionId,
         imageUrl: input.imageUrl,
         faceDetected: input.faceDetected,
         multipleFaces: input.multipleFaces,
-        candidateAbsent: input.candidateAbsent,
+        candidateAbsent,
       },
     });
 
@@ -43,10 +59,14 @@ export class ProctoringService {
         severity: 4,
       });
     }
-    if (input.candidateAbsent) {
+    if (candidateAbsent) {
+      // Calculate the actual gap to include in the description
+      const actualGap = lastSnapshot
+        ? Math.floor((Date.now() - lastSnapshot.capturedAt.getTime()) / 1000)
+        : 0;
       flags.push({
         flagType: FlagType.ABSENT_60S,
-        description: `Candidate absent for more than ${proctoringConfig.absenceThresholdSeconds} seconds`,
+        description: `Candidate absent for ${actualGap > 0 ? actualGap : "more than " + proctoringConfig.absenceThresholdSeconds} seconds (threshold: ${proctoringConfig.absenceThresholdSeconds}s)`,
         severity: 4,
       });
     }

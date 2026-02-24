@@ -39,6 +39,9 @@ const ExaminerResultsDashboard = lazy(
   () => import("@/pages/exams/ExaminerResultsDashboard"),
 );
 const ProctorQueuePage = lazy(() => import("@/pages/proctor/ProctorQueuePage"));
+const ProctorSessionDetailPage = lazy(
+  () => import("@/pages/proctor/ProctorSessionDetailPage"),
+);
 const ExamSessionPage = lazy(
   () => import("@/pages/exam-taking/ExamSessionPage"),
 );
@@ -49,6 +52,9 @@ const NotificationCenterPage = lazy(
   () => import("@/pages/dashboard/NotificationCenterPage"),
 );
 const UnauthorizedPage = lazy(() => import("@/pages/auth/UnauthorizedPage"));
+const AccommodationManagementPage = lazy(
+  () => import("@/pages/accommodations/AccommodationManagementPage"),
+);
 
 const Loader = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -111,8 +117,16 @@ const router = createBrowserRouter([
           { path: "exams/:id/results", element: <ExamResultsPage /> },
           { path: "results-management", element: <ExaminerResultsDashboard /> },
           { path: "sessions", element: <ProctorQueuePage /> },
+          {
+            path: "sessions/:sessionId",
+            element: <ProctorSessionDetailPage />,
+          },
           { path: "history", element: <ResultsHistoryPage /> },
           { path: "notifications", element: <NotificationCenterPage /> },
+          {
+            path: "accommodations",
+            element: <AccommodationManagementPage />,
+          },
         ],
       },
       {

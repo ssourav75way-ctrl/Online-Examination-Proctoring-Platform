@@ -7,6 +7,7 @@ import {
 } from "@/services/institutionApi";
 import { Button } from "@/components/common/Button";
 import { MemberAddModal } from "../institutions/MemberAddModal";
+import { useInstitution } from "@/contexts/InstitutionContext";
 
 export default function UserManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,7 +16,7 @@ export default function UserManagementPage() {
   >();
   const user = useSelector((state: RootState) => state.auth.user);
   const isSuperAdmin = user?.globalRole === "SUPER_ADMIN";
-  const institutionId = user?.institutionMembers?.[0]?.institution.id;
+  const { institutionId } = useInstitution();
 
   const {
     data: memberData,

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { Button } from "@/components/common/Button";
 import {
   useGetExamResultsQuery,
@@ -18,8 +17,7 @@ import IntegrityTab from "./IntegrityTab";
 export default function ExamResultsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const [activeTab, setActiveTab] = useState<
     "results" | "requests" | "analytics" | "integrity"

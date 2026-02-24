@@ -105,7 +105,13 @@ export const sessionApi = apiSlice.injectEndpoints({
     }),
 
     proctorUnlock: builder.mutation<
-      { data: ExamSession },
+      {
+        data: {
+          unlocked: boolean;
+          additionalTimePausedSeconds: number;
+          message: string;
+        };
+      },
       { sessionId: string }
     >({
       query: ({ sessionId }) => ({
@@ -115,7 +121,12 @@ export const sessionApi = apiSlice.injectEndpoints({
     }),
 
     extendTime: builder.mutation<
-      { data: ExamSession },
+      {
+        data: {
+          newDeadline: string;
+          remainingSeconds: number;
+        };
+      },
       { sessionId: string; additionalMinutes: number }
     >({
       query: ({ sessionId, ...body }) => ({

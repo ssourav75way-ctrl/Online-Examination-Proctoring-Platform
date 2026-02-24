@@ -5,7 +5,7 @@ import {
   ProctorFlag,
 } from "@/services/proctorApi";
 import { Button } from "@/components/common/Button";
-import { useSelector } from "react-redux";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { CONSTANTS } from "@/constants";
 import { ProctorLiveGallery } from "./ProctorLiveGallery";
 
@@ -39,13 +39,11 @@ const severityBadgeMap: Record<number, { label: string; classes: string }> = {
   },
   5: { label: "Severe", classes: "bg-red-100 text-red-800 border-red-200" },
 };
-import { RootState } from "@/store";
 
 export function ProctorQueuePage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"review" | "live">("review");
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const { data, isLoading, isError, error } = useGetPendingFlagsQuery({
     page,

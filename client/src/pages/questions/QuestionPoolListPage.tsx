@@ -1,16 +1,10 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { useGetQuestionPoolsQuery, QuestionPool } from "@/services/questionApi";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { Button } from "@/components/common/Button";
 import { CONSTANTS } from "@/constants";
 import { QuestionPoolFormModal } from "./QuestionPoolFormModal";
 import { useState } from "react";
-
-type RootState = {
-  auth: {
-    user: { institutionMembers?: { institution: { id: string } }[] } | null;
-  };
-};
 
 export function QuestionPoolListPage() {
   const [page, setPage] = useState(1);
@@ -23,8 +17,7 @@ export function QuestionPoolListPage() {
     undefined,
   );
 
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const { data, isLoading, isError, error } = useGetQuestionPoolsQuery(
     {

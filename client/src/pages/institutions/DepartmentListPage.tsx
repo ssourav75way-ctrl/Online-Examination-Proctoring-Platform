@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { useGetDepartmentsQuery } from "@/services/institutionApi";
 import { Button } from "@/components/common/Button";
 import { DepartmentFormModal } from "./DepartmentFormModal";
 
 export default function DepartmentListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution.id;
+  const { institutionId } = useInstitution();
 
   const {
     data: departmentResponse,

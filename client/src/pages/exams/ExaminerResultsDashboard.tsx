@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { useGetExamsByInstitutionQuery } from "@/services/examApi";
 import { Button } from "@/components/common/Button";
 import { formatDateIST } from "@/utils/dateFormat";
@@ -8,8 +7,7 @@ import { Exam } from "@/types/exam";
 
 export default function ExaminerResultsDashboard() {
   const navigate = useNavigate();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const page = 1;
 

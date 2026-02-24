@@ -16,6 +16,7 @@ import { ExamFormModal } from "./ExamFormModal";
 import { ExamQuestionPicker } from "./ExamQuestionPicker";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { useInstitution } from "@/contexts/InstitutionContext";
 import { formatDateIST } from "@/utils/dateFormat";
 
 const typeBadge: Record<string, { label: string; cls: string }> = {
@@ -47,8 +48,9 @@ export function ExamDetailPage() {
   const effectiveRole = useSelector(
     (state: RootState) => state.auth.effectiveRole,
   );
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
-  const userRole = effectiveRole || String(user?.globalRole || "");
+  const { institutionId, activeMembership } = useInstitution();
+  const userRole =
+    activeMembership?.role || effectiveRole || String(user?.globalRole || "");
 
   const {
     data: examData,

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { Button } from "@/components/common/Button";
 import {
   useStartSessionMutation,
@@ -12,18 +11,24 @@ import {
   useGetMarkersQuery,
 } from "@/services/sessionApi";
 import { useGetMyEnrollmentQuery } from "@/services/examApi";
-import { RootState } from "@/store";
+import { useUploadSnapshotMutation } from "@/services/proctorApi";
 import { ApiError } from "@/types/common";
+import { useInstitution } from "@/contexts/InstitutionContext";
 
 import { Enrollment, QuestionItem } from "@/types/modules/exam.types";
 
-type ExamPhase = "loading" | "pre-exam" | "in-progress" | "finished" | "error";
+type ExamPhase =
+  | "loading"
+  | "pre-exam"
+  | "in-progress"
+  | "finished"
+  | "error"
+  | "locked";
 
 export function ExamSessionPage() {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
+  const { institutionId } = useInstitution();
 
   const [startSession] = useStartSessionMutation();
   const [submitAnswer] = useSubmitAnswerMutation();
@@ -32,6 +37,7 @@ export function ExamSessionPage() {
   const [reportViolation] = useReportViolationMutation();
   const [getSessionStatus] = useLazyGetSessionStatusQuery();
   const [getQuestion] = useLazyGetQuestionQuery();
+  const [uploadSnapshot] = useUploadSnapshotMutation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const { data: markersData } = useGetMarkersQuery(
     { sessionId: sessionId as string },
@@ -59,11 +65,14 @@ export function ExamSessionPage() {
   const [webcamError, setWebcamError] = useState<string | null>(null);
   const [examNotYetStarted, setExamNotYetStarted] = useState(false);
   const [startsIn, setStartsIn] = useState("");
+  const [lockReason, setLockReason] = useState<string | null>(null);
 
   const tabSwitchCountRef = useRef(0);
   const pageVisibleRef = useRef(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const snapshotCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const snapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (enrollmentLoading) return;
@@ -85,7 +94,14 @@ export function ExamSessionPage() {
 
     if (enrollment.session && !enrollment.session.finishedAt) {
       setSessionId(enrollment.session.id);
-      setPhase("in-progress");
+      if (enrollment.session.isLocked) {
+        setLockReason(
+          enrollment.session.lockReason || "Session locked due to violations",
+        );
+        setPhase("locked");
+      } else {
+        setPhase("in-progress");
+      }
       return;
     }
 
@@ -114,26 +130,57 @@ export function ExamSessionPage() {
   }, [phase]);
 
   useEffect(() => {
-    if (!sessionId || phase !== "in-progress") return;
-    const interval = setInterval(async () => {
-      try {
-        const result = await getSessionStatus({ sessionId }).unwrap();
-        if (result?.data?.timerState?.remainingSeconds !== undefined) {
-          setTimeLeft(result.data.timerState.remainingSeconds);
-        }
-        if (result?.data?.timerState?.isExpired) {
-          setPhase("finished");
-        }
-      } catch {}
-    }, 30000);
+    if (!sessionId || (phase !== "in-progress" && phase !== "locked")) return;
+    const interval = setInterval(
+      async () => {
+        try {
+          const result = await getSessionStatus({ sessionId }).unwrap();
+          if (result?.data?.timerState?.remainingSeconds !== undefined) {
+            setTimeLeft(result.data.timerState.remainingSeconds);
+          }
+          if (result?.data?.timerState?.isExpired) {
+            setPhase("finished");
+          }
+          // Check if session was unlocked by proctor
+          if (
+            phase === "locked" &&
+            result?.data?.session &&
+            !result.data.session.isLocked
+          ) {
+            setLockReason(null);
+            setPhase("in-progress");
+          }
+          // Check if session was locked
+          if (phase === "in-progress" && result?.data?.session?.isLocked) {
+            setLockReason(
+              result.data.session.lockReason ||
+                "Session locked due to violations",
+            );
+            setPhase("locked");
+          }
+        } catch {}
+      },
+      phase === "locked" ? 10000 : 30000,
+    );
     return () => clearInterval(interval);
   }, [sessionId, phase, getSessionStatus]);
 
-  const handleVisibilityChange = useCallback(() => {
+  const handleVisibilityChange = useCallback(async () => {
     if (document.hidden && sessionId && phase === "in-progress") {
       tabSwitchCountRef.current++;
-      reportViolation({ sessionId, type: "TAB_SWITCH" });
       pageVisibleRef.current = false;
+      try {
+        const result = await reportViolation({
+          sessionId,
+          type: "TAB_SWITCH",
+        }).unwrap();
+        if (result?.data?.isLocked) {
+          setLockReason(
+            `Session locked after ${tabSwitchCountRef.current} tab switch violations`,
+          );
+          setPhase("locked");
+        }
+      } catch {}
     } else {
       pageVisibleRef.current = true;
     }
@@ -250,6 +297,62 @@ export function ExamSessionPage() {
       if (phase !== "in-progress") stopWebcam();
     };
   }, [phase, startWebcam, stopWebcam]);
+
+  // Periodic webcam snapshot capture at random intervals (15-45s)
+  useEffect(() => {
+    if (phase !== "in-progress" || !sessionId || !webcamActive) return;
+
+    const captureSnapshot = () => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return; // not ready
+
+      // Create or reuse a hidden canvas
+      if (!snapshotCanvasRef.current) {
+        snapshotCanvasRef.current = document.createElement("canvas");
+      }
+      const canvas = snapshotCanvasRef.current;
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageUrl = canvas.toDataURL("image/jpeg", 0.6);
+
+      // Upload snapshot — server handles absence detection
+      uploadSnapshot({
+        sessionId: sessionId!,
+        imageUrl,
+        faceDetected: true, // basic: assume face detected since webcam is on
+        multipleFaces: false,
+        candidateAbsent: false,
+      }).catch(() => {
+        // Silently fail — don't disrupt the exam
+      });
+    };
+
+    const scheduleNextCapture = () => {
+      // Random interval between 15-45 seconds
+      const delayMs = (15 + Math.random() * 30) * 1000;
+      snapshotTimerRef.current = setTimeout(() => {
+        captureSnapshot();
+        scheduleNextCapture();
+      }, delayMs);
+    };
+
+    // Initial capture after a short delay
+    snapshotTimerRef.current = setTimeout(() => {
+      captureSnapshot();
+      scheduleNextCapture();
+    }, 5000);
+
+    return () => {
+      if (snapshotTimerRef.current) {
+        clearTimeout(snapshotTimerRef.current);
+        snapshotTimerRef.current = null;
+      }
+    };
+  }, [phase, sessionId, webcamActive, uploadSnapshot]);
 
   const handleStartExam = async () => {
     if (!enrollmentData?.data) return;
@@ -553,6 +656,77 @@ export function ExamSessionPage() {
                   ? " Camera Required"
                   : " Start Exam"}
             </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "locked") {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-rose-950 via-slate-900 to-slate-950 flex items-center justify-center p-8">
+        <div className="max-w-lg w-full text-center space-y-8">
+          {/* Pulsing lock icon */}
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 bg-rose-500/20 rounded-full animate-ping" />
+            <div className="relative w-24 h-24 bg-rose-600/30 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-rose-500/50">
+              <svg
+                className="w-12 h-12 text-rose-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="text-3xl font-black text-white tracking-tight">
+              Exam Session Locked
+            </h1>
+            <p className="text-rose-200 text-lg font-medium">
+              Your session has been temporarily suspended.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4 text-left">
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-rose-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-rose-400 text-xs font-black">!</span>
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Reason</p>
+                <p className="text-slate-300 text-sm mt-0.5">
+                  {lockReason || "Multiple integrity violations detected"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">
+                  What happens now?
+                </p>
+                <p className="text-slate-300 text-sm mt-0.5">
+                  A proctor has been notified and will review your session. If
+                  approved, your exam will resume automatically. Your timer has
+                  been paused.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="font-medium">Waiting for proctor approval...</span>
           </div>
         </div>
       </div>

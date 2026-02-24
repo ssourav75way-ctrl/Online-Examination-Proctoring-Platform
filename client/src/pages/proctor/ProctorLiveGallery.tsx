@@ -1,4 +1,5 @@
 import { useGetActiveSessionsQuery, LiveSession } from "@/services/proctorApi";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
 interface ProctorLiveGalleryProps {
@@ -6,6 +7,7 @@ interface ProctorLiveGalleryProps {
 }
 
 export function ProctorLiveGallery({ institutionId }: ProctorLiveGalleryProps) {
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useGetActiveSessionsQuery(
     { institutionId },
     { pollingInterval: 10000 },
@@ -116,7 +118,12 @@ export function ProctorLiveGallery({ institutionId }: ProctorLiveGalleryProps) {
                         ? `Last seen ${format(new Date(snapshot.capturedAt), "HH:mm:ss")}`
                         : "Starting..."}
                     </span>
-                    <button className="text-[11px] font-bold text-primary-600 hover:text-primary-700 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50">
+                    <button
+                      onClick={() =>
+                        navigate(`/dashboard/sessions/${session.id}`)
+                      }
+                      className="text-[11px] font-bold text-primary-600 hover:text-primary-700 transition-colors px-2 py-1 rounded-lg hover:bg-primary-50"
+                    >
                       View Details &rarr;
                     </button>
                   </div>

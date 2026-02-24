@@ -8,6 +8,7 @@ import { CONSTANTS } from "@/constants";
 import { ExamFormModal } from "./ExamFormModal";
 
 import { RootState } from "@/store";
+import { useInstitution } from "@/contexts/InstitutionContext";
 
 import { formatDateIST } from "@/utils/dateFormat";
 
@@ -44,9 +45,9 @@ export function ExamListPage() {
   const effectiveRole = useSelector(
     (state: RootState) => state.auth.effectiveRole,
   );
-  const institutionId = user?.institutionMembers?.[0]?.institution?.id || "";
-
-  const userRole = effectiveRole || String(user?.globalRole || "");
+  const { institutionId, activeMembership } = useInstitution();
+  const userRole =
+    activeMembership?.role || effectiveRole || String(user?.globalRole || "");
   const isCandidate = userRole === "CANDIDATE";
 
   const { data, isLoading, isError, error } = useGetExamsByInstitutionQuery(
