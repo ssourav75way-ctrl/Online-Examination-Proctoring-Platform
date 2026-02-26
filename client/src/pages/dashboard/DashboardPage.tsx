@@ -97,7 +97,7 @@ export function DashboardPage() {
 
   const { data: instData, isLoading: instLoading } = useGetInstitutionsQuery(
     { page: 1, limit: 1 },
-    { skip: currentUserRole === "PROCTOR" || isSuperAdmin },
+    { skip: currentUserRole === "PROCTOR" },
   );
 
   const institutionId = selectedInstId || instData?.data?.[0]?.id || "";
@@ -318,15 +318,6 @@ export function DashboardPage() {
                 }}
               >
                 Add Proctor
-              </Button>
-              <Button
-                id="add-dept-btn"
-                size="lg"
-                variant="secondary"
-                className="shadow-soft"
-                onClick={() => setIsDeptModalOpen(true)}
-              >
-                Add Department
               </Button>
             </>
           )}

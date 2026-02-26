@@ -60,10 +60,6 @@ export const institutionScope = async (
     let departmentIds: string[] = [];
     const normalizedRole = String(membership.role).toUpperCase();
 
-    console.log(
-      `[InstitutionScope] User: ${req.user.userId}, Inst: ${institutionId}, Role: ${normalizedRole}`,
-    );
-
     if (normalizedRole === "ADMIN" || normalizedRole === "EXAMINER") {
       if (
         normalizedRole === "ADMIN" ||
@@ -74,22 +70,13 @@ export const institutionScope = async (
           select: { id: true },
         });
         departmentIds = allDepts.map((d) => d.id);
-        console.log(
-          `[InstitutionScope] Full access granted to ${departmentIds.length} departments for ${normalizedRole}`,
-        );
       } else {
         departmentIds = membership.departmentAccess.map(
           (da) => da.departmentId,
         );
-        console.log(
-          `[InstitutionScope] Restricted access granted to ${departmentIds.length} departments for ${normalizedRole}`,
-        );
       }
     } else {
       departmentIds = membership.departmentAccess.map((da) => da.departmentId);
-      console.log(
-        `[InstitutionScope] Access granted to ${departmentIds.length} departments for ${normalizedRole}`,
-      );
     }
 
     const scopedUser: InstitutionScopedUser = {
