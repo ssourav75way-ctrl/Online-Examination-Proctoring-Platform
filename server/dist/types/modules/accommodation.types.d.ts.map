@@ -1,0 +1,1 @@
+{"version":3,"file":"accommodation.types.d.ts","sourceRoot":"","sources":["../../../src/types/modules/accommodation.types.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,iBAAiB,EAAE,MAAM,gBAAgB,CAAC;AAEnD,MAAM,WAAW,wBAAwB;IACvC,WAAW,EAAE,MAAM,CAAC;IACpB,IAAI,EAAE,iBAAiB,CAAC;IACxB,MAAM,EAAE,MAAM,CAAC;IACf,SAAS,EAAE,MAAM,CAAC;IAClB,UAAU,CAAC,EAAE,MAAM,CAAC;CACrB"}

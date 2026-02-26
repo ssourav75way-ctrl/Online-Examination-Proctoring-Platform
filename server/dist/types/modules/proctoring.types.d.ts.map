@@ -1,0 +1,1 @@
+{"version":3,"file":"proctoring.types.d.ts","sourceRoot":"","sources":["../../../src/types/modules/proctoring.types.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,mBAAmB;IAClC,SAAS,EAAE,MAAM,CAAC;IAClB,QAAQ,EAAE,MAAM,CAAC;IACjB,YAAY,EAAE,OAAO,CAAC;IACtB,aAAa,EAAE,OAAO,CAAC;IACvB,eAAe,EAAE,OAAO,CAAC;CAC1B"}

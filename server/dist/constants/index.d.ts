@@ -1,0 +1,2 @@
+export { GlobalRole, InstitutionRole, QuestionType, ExamStatus, EnrollmentStatus, AccommodationType, FlagType, ReviewStatus, ViolationType, ResultStatus, ReEvalStatus, AccommodationAction, NotificationType, } from "@prisma/client";
+//# sourceMappingURL=index.d.ts.map

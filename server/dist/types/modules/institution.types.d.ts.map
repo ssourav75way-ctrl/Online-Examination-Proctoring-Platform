@@ -1,0 +1,1 @@
+{"version":3,"file":"institution.types.d.ts","sourceRoot":"","sources":["../../../src/types/modules/institution.types.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,eAAe,EAAE,MAAM,gBAAgB,CAAC;AAEjD,MAAM,WAAW,sBAAsB;IACrC,IAAI,EAAE,MAAM,CAAC;IACb,IAAI,EAAE,MAAM,CAAC;CACd;AAED,MAAM,WAAW,cAAc;IAC7B,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,eAAe,CAAC;IACtB,aAAa,CAAC,EAAE,MAAM,EAAE,CAAC;CAC1B"}
